@@ -26,6 +26,7 @@ public class LoginUtil {
 			Log.e(TAG,"Authentication failed due to wrong credential.");
 		}
 	}
+	//TODO explain this
 	public static class IPChangedException extends Exception {
 		private IPChangedException (String TAG) {
 			Log.e(TAG,"Logged out due to IP address change. Please use stable connection such as Wi-Fi.");
@@ -41,6 +42,8 @@ public class LoginUtil {
 		private String studentId = null;
 		private String plainPassword = null;
 		private String base64Password = null;
+		
+		HttpURLConnection loginCon = null, checkCon = null;
 
 		/**
 		 * Use of this constructor is forbidden as it doesn't force to give necessary information
@@ -62,7 +65,7 @@ public class LoginUtil {
 		protected Boolean doInBackground(Void... params) {
 			try {		
 				String loginPageURL = "http://sugang.snu.ac.kr/sugang/j_login";
-				HttpURLConnection loginCon 
+				loginCon 
 					= CommUtil.getSugangConnection(loginPageURL, jSessionId, CommUtil.getURL(CommUtil.MAIN));
 				loginCon.setInstanceFollowRedirects(false);  // To get Location header field, stop redirection.
 				//Write Login Data, Note current time.
@@ -104,24 +107,28 @@ public class LoginUtil {
 				for (int i=0; i<cookies.size();i++) {
 					String cookie = cookies.get(i);
 					//Look for JSESSIONID by doing case-insensitive search for each cookie.
-					if (cookie.toUpperCase(Locale.ENGLISH).contains("JSESSION")) 
+					if (cookie.toUpperCase(Locale.ENGLISH).contains("JSESSION")) {
 						jSessionId = cookie;
+						break;
+					}
 				}
 				if (jSessionId == null) {
 					Log.e(TAG,"JSESSIONID is not found.");
 					throw new PageChangedException(TAG);
 				}
-				loginCon.disconnect();
 				
+				//TODO : explain below
 				/**
 				 * Verify again with the given JSESSIONID by checking the main page 
 				 * now have certain String that indicates the login was successful.
 				 */
-				HttpURLConnection checkCon 
+				checkCon 
 					= CommUtil.getSugangConnection(CommUtil.getURL(CommUtil.MAIN), jSessionId, loginPageURL);
 				BufferedReader br = new BufferedReader(new InputStreamReader(checkCon.getInputStream()));
 				for (String line=br.readLine(); line!=null; line=br.readLine()) {
-					if(line.contains("로그인전")) throw new IPChangedException(TAG);
+					if(line.contains("로그인전")) {
+						throw new IPChangedException(TAG);
+					}
 					else if(line.contains("로그인후")) break;
 				}
 				return true;
@@ -144,6 +151,10 @@ public class LoginUtil {
 				//Catch unknown errors to avoid the app being killed by the system.
 				return false;
 			}
+			finally {
+				if(loginCon!=null) loginCon.disconnect();
+				if(checkCon!=null) checkCon.disconnect();
+			}
 		}
 		
 		/**
@@ -155,7 +166,10 @@ public class LoginUtil {
 				Log.i(TAG, "Logged in at " + Long.valueOf(timeStamp).toString());
 				onSuccess(jSessionId,timeStamp);
 			}
-			else onFailure();
+			else {
+				Log.e(TAG, "Login failed.");
+				onFailure();
+			}
 		}
 		
 		protected abstract void onSuccess (String jSessionId, long timeStamp);
