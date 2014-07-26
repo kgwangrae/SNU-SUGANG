@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    style="@style/RootContainerAttr" >
+    <EditText 
+        android:id="@+id/input_student_id"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/input_padding"
+        android:hint="@string/student_id"
+        android:singleLine="true"
+        />
+    <EditText 
+        android:id="@+id/input_password"
+        android:layout_alignLeft="@id/input_student_id"
+        android:layout_below="@id/input_student_id"
+        android:layout_marginTop="3dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/input_padding"
+        android:hint="@string/password"
+        android:singleLine="true"
+        android:inputType="textPassword"
+        />
+    <CheckBox 
+        android:id="@+id/checkbox_remember_credential"
+        android:layout_below="@id/input_password"
+        android:layout_marginTop="35dp"
+        android:layout_alignLeft="@id/input_password"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:checked="true"
+        android:text="@string/remember" />
+    <Button 
+        android:id="@+id/button_sign_in"
+        android:layout_alignBaseline="@id/checkbox_remember_credential"
+        android:layout_alignRight="@id/input_password"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/button_padding"
+        android:text="@string/sign_in"/>
+    
+
+</RelativeLayout>

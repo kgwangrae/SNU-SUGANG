@@ -1,0 +1,10 @@
+<resources>
+
+    <string name="title_activity_login">SNU 수강신청 로그인</string>
+	<string name="student_id">학번</string>
+	<string name="password">수강신청 비밀번호</string>
+	<string name="remember">기억하기</string>
+	<string name="sign_in">로그인</string>
+	<string name="signing_in">로그인 중</string>
+	<string name="please_wait">잠시만 기다려주세요</string>
+</resources>

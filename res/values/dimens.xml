@@ -1,0 +1,4 @@
+<resources>
+    <dimen name="input_padding">11dp</dimen>
+    <dimen name="button_padding">15dp</dimen>
+</resources>
