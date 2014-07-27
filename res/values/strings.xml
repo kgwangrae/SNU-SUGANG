@@ -4,6 +4,6 @@
     <string name="app_name">스누 수강신청</string>
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">설정</string>
-    
+    <string name="title_activity_submit">수강신청하기</string>
 
 </resources>
