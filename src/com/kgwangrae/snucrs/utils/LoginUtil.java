@@ -139,7 +139,7 @@ public class LoginUtil {
 				
 				/**
 				 * Verify again with the given JSESSIONID by checking the main page 
-				 * now have certain String that indicates the login was successful.
+				 * now has some certain Strings that indicates the login was successful.
 				 */
 				checkCon 
 					= CommUtil.getSugangConnection(CommUtil.getURL(CommUtil.MAIN), jSessionId, loginPageURL);
