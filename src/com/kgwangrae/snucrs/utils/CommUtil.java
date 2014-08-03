@@ -11,6 +11,7 @@ import android.util.Log;
  * Utils for communicating with SNUCRS server.
  * @author Gwangrae Kim
  */
+@SuppressWarnings("serial")
 public class CommUtil {
 	/**
 	 * URL Strings
@@ -61,7 +62,8 @@ public class CommUtil {
 	}
 	
 	/**
-	 * Thrown when sturcture of the SNUCRS web page is changed so that this application can no longer operate. 
+	 * Thrown when sturcture of the SNUCRS web page is changed so that this application can no longer operate.
+	 * NOTE : It can be unexpectedly thrown when the web page is incompletely loaded (usually due to slow connection) 
 	 */
 	public static class PageChangedException extends Exception {
 		public PageChangedException(String TAG) {

@@ -17,16 +17,16 @@ import android.util.Log;
 import com.kgwangrae.snucrs.utils.CommUtil.PageChangedException;
 
 /**
- * Things relevant to credentials.
+ * Things relevant to signing in.
  * @author Gwangrae Kim
  */
+@SuppressWarnings("serial")
 public class LoginUtil {
 	private static class WrongCredentialException extends Exception {
 		private WrongCredentialException (String TAG) {
 			Log.e(TAG,"Authentication failed due to wrong credential.");
 		}
 	}
-	//TODO explain this
 	public static class IPChangedException extends Exception {
 		private IPChangedException (String TAG) {
 			Log.e(TAG,"Logged out due to IP address change. Please use stable connection such as Wi-Fi.");
@@ -34,7 +34,7 @@ public class LoginUtil {
 	}
 	
 	public static abstract class LoginTask extends AsyncTask<Void, Void, Boolean> {
-		private static String TAG = "LoginTask";
+		private final static String TAG = "LoginTask";
 		
 		private String jSessionId = null;
 		private long timeStamp = 0;
@@ -43,14 +43,22 @@ public class LoginUtil {
 		private String plainPassword = null;
 		private String base64Password = null;
 		
-		HttpURLConnection loginCon = null, checkCon = null;
+		//Connection, Writer references that should be closed regardless of exceptions.
+		private HttpURLConnection loginCon = null, checkCon = null;
+		private OutputStreamWriter writer = null;
+		
+		//Retrial parameters
+		private final static long IO_RETRIAL_INTERVAL = 1000;
+		private final static int MAX_TRIAL_COUNT = 50;
+		private final static long TIMEOUT = IO_RETRIAL_INTERVAL*MAX_TRIAL_COUNT;
+		private long initialTime = 0;
+		private int trialCount = 0;
+		private Exception raisedException = null;
 
-		/**
-		 * Use of this constructor is forbidden as it doesn't force to give necessary information
-		 */
-		private LoginTask () {
-			super();
+		private final boolean isRetrialRequired() {
+			return (System.currentTimeMillis() - initialTime <= TIMEOUT && trialCount < MAX_TRIAL_COUNT);
 		}
+		
 		public LoginTask (String studentId, String plainPassword) {
 			super();
 			this.studentId = studentId;
@@ -60,9 +68,16 @@ public class LoginUtil {
 			if(base64Password.length()>0) 
 				base64Password = base64Password.substring(0,base64Password.length()-1);
 		}
+		//Note : Final methods can't be overriden just like final constants.
+		public final LoginTask execute () {
+			super.execute((Void) null);
+			initialTime = System.currentTimeMillis();
+			return this;
+		}
 		
 		@Override
-		protected Boolean doInBackground(Void... params) {
+		protected final Boolean doInBackground(Void... params) {
+			trialCount ++;
 			try {		
 				String loginPageURL = "http://sugang.snu.ac.kr/sugang/j_login";
 				loginCon 
@@ -70,7 +85,7 @@ public class LoginUtil {
 				loginCon.setInstanceFollowRedirects(false);  // To get Location header field, stop redirection.
 				//Write Login Data, Note current time.
 				timeStamp = System.currentTimeMillis();
-				OutputStreamWriter writer = new OutputStreamWriter(loginCon.getOutputStream());
+				writer = new OutputStreamWriter(loginCon.getOutputStream());
 				String data = "j_username="+URLEncoder.encode(studentId,"utf-8")
 						+"&j_password="+URLEncoder.encode(base64Password,"utf-8")
 						+"&v_password="+URLEncoder.encode(plainPassword,"utf-8")
@@ -85,24 +100,28 @@ public class LoginUtil {
 				Map<String,List<String>> headers = loginCon.getHeaderFields();
 				if (headers == null) {
 					Log.e("TAG","No headers were received from the server.");
-					throw new PageChangedException(TAG);
+					raisedException = new PageChangedException(TAG);
+					throw raisedException;
 				}
 				
 				//Verify whether the login process was successful. 
 				String locationHeader = headers.get("Location").get(0);
 				if (locationHeader == null) {
 					Log.e(TAG,"Location Header is null.");
-					throw new PageChangedException(TAG);
+					raisedException = new PageChangedException(TAG);
+					throw raisedException;
 				}
 				else if (locationHeader.contains("fail")) {
-					throw new WrongCredentialException(TAG);		
+					raisedException = new WrongCredentialException(TAG);	
+					throw raisedException;
 				}
 				
 				//Get cookies
 				List<String> cookies = headers.get("Set-Cookie");
 				if (cookies == null) {
 					Log.e(TAG,"Set-Cookie Header is null.");
-					throw new PageChangedException(TAG);
+					raisedException = new PageChangedException(TAG);
+					throw raisedException;
 				}
 				for (int i=0; i<cookies.size();i++) {
 					String cookie = cookies.get(i);
@@ -114,10 +133,10 @@ public class LoginUtil {
 				}
 				if (jSessionId == null) {
 					Log.e(TAG,"JSESSIONID is not found.");
-					throw new PageChangedException(TAG);
+					raisedException = new PageChangedException(TAG);
+					throw raisedException;
 				}
 				
-				//TODO : explain below
 				/**
 				 * Verify again with the given JSESSIONID by checking the main page 
 				 * now have certain String that indicates the login was successful.
@@ -127,7 +146,8 @@ public class LoginUtil {
 				BufferedReader br = new BufferedReader(new InputStreamReader(checkCon.getInputStream()));
 				for (String line=br.readLine(); line!=null; line=br.readLine()) {
 					if(line.contains("로그인전")) {
-						throw new IPChangedException(TAG);
+						raisedException = new IPChangedException(TAG);
+						throw raisedException;
 					}
 					else if(line.contains("로그인후")) break;
 				}
@@ -136,16 +156,32 @@ public class LoginUtil {
 			//Catch exceptions, starting from the most common one. 
 			catch (IOException e) {
 				Log.e(TAG,"Please use reliable connection.",e);
-				return false;
+				if (isRetrialRequired()) {
+					try { Thread.sleep(IO_RETRIAL_INTERVAL); }
+					catch (InterruptedException ie) { Log.e(TAG,ie.getMessage(),ie); }
+					return doInBackground((Void) null);
+				}
+				else return false;
 			}
 			catch (WrongCredentialException e) {
+				//Retrying is meaningless for this case.
 				return false;
 			}
 			catch (IPChangedException e) {
-				return false;
+				if (isRetrialRequired()) {
+					//No interval is required for this case.
+					return doInBackground((Void) null);
+				}
+				else return false;
 			}
 			catch (PageChangedException e) {
-				return false;
+				//See PageChangedException for detail why retrial is required for this exception.
+				if (isRetrialRequired()) {
+					try { Thread.sleep(IO_RETRIAL_INTERVAL); }
+					catch (InterruptedException ie) { Log.e(TAG,ie.getMessage(),ie); }
+					return doInBackground((Void) null);
+				}
+				else return false;
 			}
 			catch (Exception e) {
 				//Catch unknown errors to avoid the app being killed by the system.
@@ -154,25 +190,25 @@ public class LoginUtil {
 			finally {
 				if(loginCon!=null) loginCon.disconnect();
 				if(checkCon!=null) checkCon.disconnect();
+				if(writer!=null) {
+					try { writer.close(); }
+					catch (Exception e) { e.printStackTrace(); }
+				}
 			}
 		}
 		
-		/**
-		 * super.onPostExecute (Boolean result) must be called when overriding this method.
-		 */
 		@Override 
-		protected void onPostExecute (Boolean result) {
+		protected final void onPostExecute (Boolean result) {
 			if (result) {
 				Log.i(TAG, "Logged in at " + Long.valueOf(timeStamp).toString());
 				onSuccess(jSessionId,timeStamp);
 			}
 			else {
-				Log.e(TAG, "Login failed.");
-				onFailure();
+				Log.e(TAG, "Login failed.",raisedException);
+				onFailure(raisedException);
 			}
 		}
-		
 		protected abstract void onSuccess (String jSessionId, long timeStamp);
-		protected abstract void onFailure ();
+		protected abstract void onFailure (Exception exceptionInstance);
 	}
 }

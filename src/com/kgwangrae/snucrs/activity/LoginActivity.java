@@ -54,11 +54,11 @@ public class LoginActivity extends ActionBarActivity {
 				Toast.makeText(LoginActivity.this, "성공"+Long.valueOf(timeStamp).toString(), Toast.LENGTH_SHORT).show();
 			}
 			@Override
-			protected void onFailure() {
+			protected void onFailure(Exception e) {
 				if (pd.isShowing()) pd.dismiss();
 				Toast.makeText(LoginActivity.this, "실패", Toast.LENGTH_SHORT).show();
 			}
 		};
-		loginTask.execute((Void) null);
+		loginTask.execute();
 	}
 }
