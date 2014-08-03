@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import android.content.Context;
 import android.os.AsyncTask;
 import android.util.Base64;
 import android.util.Log;
@@ -35,6 +36,7 @@ public class LoginUtil {
 	
 	public static abstract class LoginTask extends AsyncTask<Void, Void, Boolean> {
 		private final static String TAG = "LoginTask";
+		private Context c = null;
 		
 		private String jSessionId = null;
 		private long timeStamp = 0;
@@ -59,8 +61,9 @@ public class LoginUtil {
 			return (System.currentTimeMillis() - initialTime <= TIMEOUT && trialCount < MAX_TRIAL_COUNT);
 		}
 		
-		public LoginTask (String studentId, String plainPassword) {
+		public LoginTask (Context c, String studentId, String plainPassword) {
 			super();
+			this.c = c;
 			this.studentId = studentId;
 			this.plainPassword = plainPassword;
 			this.base64Password = Base64.encodeToString(plainPassword.getBytes(), Base64.DEFAULT);
@@ -81,7 +84,7 @@ public class LoginUtil {
 			try {		
 				String loginPageURL = "http://sugang.snu.ac.kr/sugang/j_login";
 				loginCon 
-					= CommUtil.getSugangConnection(loginPageURL, jSessionId, CommUtil.getURL(CommUtil.MAIN));
+					= CommUtil.getSugangConnection(c, loginPageURL, CommUtil.getURL(CommUtil.MAIN));
 				loginCon.setInstanceFollowRedirects(false);  // To get Location header field, stop redirection.
 				//Write Login Data, Note current time.
 				timeStamp = System.currentTimeMillis();
@@ -142,7 +145,7 @@ public class LoginUtil {
 				 * now has some certain Strings that indicates the login was successful.
 				 */
 				checkCon 
-					= CommUtil.getSugangConnection(CommUtil.getURL(CommUtil.MAIN), jSessionId, loginPageURL);
+					= CommUtil.getSugangConnection(c, CommUtil.getURL(CommUtil.MAIN), loginPageURL);
 				BufferedReader br = new BufferedReader(new InputStreamReader(checkCon.getInputStream()));
 				for (String line=br.readLine(); line!=null; line=br.readLine()) {
 					if(line.contains("로그인전")) {
@@ -151,6 +154,8 @@ public class LoginUtil {
 					}
 					else if(line.contains("로그인후")) break;
 				}
+				//finally succeeded. Save the credential for further use.
+				PrefUtil.setCredential(c, jSessionId, timeStamp);
 				return true;
 			}
 			//Catch exceptions, starting from the most common one. 
@@ -201,14 +206,14 @@ public class LoginUtil {
 		protected final void onPostExecute (Boolean result) {
 			if (result) {
 				Log.i(TAG, "Logged in at " + Long.valueOf(timeStamp).toString());
-				onSuccess(jSessionId,timeStamp);
+				onSuccess();
 			}
 			else {
 				Log.e(TAG, "Login failed.",raisedException);
 				onFailure(raisedException);
 			}
 		}
-		protected abstract void onSuccess (String jSessionId, long timeStamp);
+		protected abstract void onSuccess ();
 		protected abstract void onFailure (Exception exceptionInstance);
 	}
 }

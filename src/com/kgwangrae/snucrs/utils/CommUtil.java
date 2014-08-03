@@ -5,6 +5,7 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import android.content.Context;
 import android.util.Log;
 
 /**
@@ -37,15 +38,16 @@ public class CommUtil {
 	/**
 	 * Returns a new {@link HttpURLConnection} object for the given URL
 	 * with commonly used headers for communicating with the server.
+	 * @param c Context
 	 * @param url Get this by using {@link CommUtil}.getURL (int page).
-	 * @param jSessionId This can be null if it doesn't exist
 	 * @param referer Get this by using {@link CommUtil}.getURL (int page). This cannot be null.
 	 * @return A new {@link HttpURLConnection} object
 	 * @throws IOException
 	 * @throws MalformedURLException Thrown when url or referer is invalid
 	 */
-	public static HttpURLConnection getSugangConnection (String url, String jSessionId, String referer) 
-																		throws IOException, MalformedURLException {
+	public static HttpURLConnection getSugangConnection (Context c, String url, String referer) 
+														throws IOException, MalformedURLException {
+		String jSessionId = PrefUtil.getJSessionId(c);
 		HttpURLConnection con = (HttpURLConnection) new URL(url).openConnection();
 		con.setReadTimeout(3000); // 1. Limit waiting time
 		con.setUseCaches(false); // 2. Disable cache
@@ -55,7 +57,11 @@ public class CommUtil {
 		con.setRequestProperty("Referer", referer); //5. Test validity of the given referer and set Referer header.
 		con.setRequestProperty("User-Agent", // 6. Set User-Agent header as Chrome
 			"Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1700.76 Safari/537.36");
-		if (jSessionId != null) con.setRequestProperty("Cookie", jSessionId+"; enter=Y");
+		if (jSessionId != null) {
+			con.setRequestProperty("Cookie", jSessionId+"; enter=Y");
+			//For every request using JSESSIONID, the life of JSESSIONID is prolonged!
+			PrefUtil.putCurrentTime(c);
+		}
 		else con.setRequestProperty("Cookie", "enter=Y"); //7,8 : Set cookie properties
 		con.setRequestMethod("POST"); //TODO : explain it later
 		return con;

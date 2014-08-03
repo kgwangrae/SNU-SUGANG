@@ -9,6 +9,7 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 import com.kgwangrae.snucrs.R;
+import com.kgwangrae.snucrs.utils.PrefUtil;
 import com.kgwangrae.snucrs.utils.LoginUtil.LoginTask;
 
 public class LoginActivity extends ActionBarActivity {
@@ -47,11 +48,12 @@ public class LoginActivity extends ActionBarActivity {
 		pd.setCancelable(false);
 		pd.setIndeterminate(true);
 		
-		LoginTask loginTask = new LoginTask (mStudentId, mPassword) {
+		LoginTask loginTask = new LoginTask (LoginActivity.this,mStudentId, mPassword) {
 			@Override
-			protected void onSuccess(String jSessionId, long timeStamp) {
+			protected void onSuccess() {
 				if (pd.isShowing()) pd.dismiss();
-				Toast.makeText(LoginActivity.this, "성공"+Long.valueOf(timeStamp).toString(), Toast.LENGTH_SHORT).show();
+				Toast.makeText(LoginActivity.this, "성공"
+					+Long.valueOf(PrefUtil.getTimeStamp(LoginActivity.this)).toString(), Toast.LENGTH_SHORT).show();
 			}
 			@Override
 			protected void onFailure(Exception e) {

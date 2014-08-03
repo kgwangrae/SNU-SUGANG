@@ -8,23 +8,23 @@ public class PrefUtil {
 	private static String jSessionIdKey = "jSessionId";
 	private static String timeStampKey = "timeStamp";
 	
-	public static SharedPreferences.Editor getPrefEditor(Context c, String category) {
-		return c.getSharedPreferences(category, Context.MODE_PRIVATE).edit();
-	}
 	public static String getJSessionId(Context c) {
 		return c.getSharedPreferences(credentialCategory, Context.MODE_PRIVATE)
 					.getString(jSessionIdKey, null);
-	}
-	public static boolean setJSessionId(Context c, String jSessionId) {
-		return c.getSharedPreferences(credentialCategory, Context.MODE_PRIVATE).edit()
-				.putString(jSessionIdKey, jSessionId).commit();
 	}
 	public static long getTimeStamp(Context c) {
 		return c.getSharedPreferences(credentialCategory, Context.MODE_PRIVATE)
 					.getLong(timeStampKey,0);
 	}
-	public static boolean setTimeStamp(Context c, long timeStamp) {
+	public static boolean setCredential(Context c, String jSessionId, long timeStamp) {
+		SharedPreferences.Editor pref 
+			= c.getSharedPreferences(credentialCategory, Context.MODE_PRIVATE).edit();
+		return pref.putString(jSessionIdKey, jSessionId)
+						.putLong(timeStampKey,timeStamp)
+						.commit();
+	}
+	public static boolean putCurrentTime(Context c) {
 		return c.getSharedPreferences(credentialCategory, Context.MODE_PRIVATE).edit()
-				.putLong(timeStampKey,timeStamp).commit();
+				.putLong(timeStampKey,System.currentTimeMillis()).commit();
 	}
 }
