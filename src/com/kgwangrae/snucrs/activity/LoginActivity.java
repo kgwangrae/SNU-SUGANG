@@ -1,6 +1,7 @@
 package com.kgwangrae.snucrs.activity;
 
 import android.app.ProgressDialog;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
 import android.view.View;
@@ -9,8 +10,8 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 import com.kgwangrae.snucrs.R;
-import com.kgwangrae.snucrs.utils.PrefUtil;
 import com.kgwangrae.snucrs.utils.LoginUtil.LoginTask;
+import com.kgwangrae.snucrs.utils.PrefUtil;
 
 public class LoginActivity extends ActionBarActivity {
 
@@ -54,6 +55,7 @@ public class LoginActivity extends ActionBarActivity {
 				if (pd.isShowing()) pd.dismiss();
 				Toast.makeText(LoginActivity.this, "성공"
 					+Long.valueOf(PrefUtil.getTimeStamp(LoginActivity.this)).toString(), Toast.LENGTH_SHORT).show();
+				startActivity(new Intent(LoginActivity.this,SubmitActivity.class));
 			}
 			@Override
 			protected void onFailure(Exception e) {
