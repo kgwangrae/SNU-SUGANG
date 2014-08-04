@@ -58,7 +58,7 @@ public class LoginUtil {
 		}
 		
 		@Override
-		protected final Boolean doInBackground(Void... params) {
+		protected final boolean backgroundTask() {
 			try {		
 				String loginPageURL = "http://sugang.snu.ac.kr/sugang/j_login";
 				loginCon 
