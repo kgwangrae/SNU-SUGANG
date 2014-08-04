@@ -51,8 +51,10 @@ public abstract class BaseAsyncTask extends AsyncTask<Void, Void, Boolean> {
 	@Override
 	protected Boolean doInBackground(Void... params) {
 		trialCount++;
-		return false;
+		return backgroundTask();
 	}
+	
+	protected abstract boolean backgroundTask();
 	
 	@Override 
 	protected final void onPostExecute (Boolean result) {

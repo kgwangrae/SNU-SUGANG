@@ -9,6 +9,7 @@ import com.kgwangrae.snucrs.R;
 
 public class SubmitActivity extends ActionBarActivity {
 
+	//TODO : Add refresh function
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
