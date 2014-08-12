@@ -113,7 +113,7 @@ public class LoginUtil {
 					throw new PageChangedException(TAG);
 				}
 				//finally succeeded. Save the credential for further use.
-				PrefUtil.setCredential(context, jSessionId, timeStamp);
+				PrefUtil.setJSessionId(context, jSessionId, timeStamp);
 				
 				/**
 				 * Verify again with the given JSESSIONID by checking the main page 

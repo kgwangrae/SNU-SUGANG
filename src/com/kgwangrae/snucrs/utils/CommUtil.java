@@ -22,6 +22,18 @@ public class CommUtil {
 	private final static String INTEREST_URL = "cc/cc210.action";
 	public final static int MAIN = 2;
 	private final static String MAIN_URL = "co/co010.action";
+	public final static int LOGOUT = 3;
+	private final static String LOGOUT_URL = "co/co003.action";
+	public final static int PRE_SUBMISSION = 4;
+	private final static String PRE_SUBMISSION_URL = "ca/ca201.action";
+	public final static int SUBMISSION = 5;
+	private final static String SUBMISSION_URL = "ca/ca101.action";
+	public final static int RESULT = 6;
+	private final static String RESULT_URL = "ca/ca110.action";
+	public final static int PRE_RESULT = 7;
+	private final static String PRE_RESULT_URL = "ca/ca210.action";
+	public final static int CAPTCHA = 8;
+	private final static String CAPTCHA_URL = "ca/number.action";
 	
 	/**
 	 * @param page One of the pageIDs which is defined as constant in this class. 
@@ -31,6 +43,12 @@ public class CommUtil {
 		switch (page) {
 		case INTEREST : return BASE_URL+INTEREST_URL;
 		case MAIN : return BASE_URL+MAIN_URL;
+		case LOGOUT : return BASE_URL+LOGOUT_URL;
+		case PRE_SUBMISSION : return BASE_URL+PRE_SUBMISSION_URL;
+		case SUBMISSION : return BASE_URL+SUBMISSION_URL;
+		case RESULT : return BASE_URL+RESULT_URL;
+		case PRE_RESULT : return BASE_URL+PRE_RESULT_URL;
+		case CAPTCHA : return BASE_URL+CAPTCHA_URL;
 		default : return null;
 		}
 	}
@@ -60,7 +78,7 @@ public class CommUtil {
 		if (jSessionId != null) {
 			con.setRequestProperty("Cookie", jSessionId+"; enter=Y");
 			//For every request using JSESSIONID, the life of JSESSIONID is prolonged!
-			PrefUtil.putCurrentTime(c);
+			PrefUtil.renewTimestamp(c);
 		}
 		else con.setRequestProperty("Cookie", "enter=Y"); //7,8 : Set cookie properties
 		con.setRequestMethod("POST"); //TODO : explain it later

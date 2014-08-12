@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.Toast;
 
@@ -15,7 +16,7 @@ import com.kgwangrae.snucrs.utils.PrefUtil;
 
 public class LoginActivity extends ActionBarActivity {
 
-	private static String TAG = "LoginActivity";
+	private final static String TAG = "LoginActivity";
 	private String mStudentId = null;
 	private String mPassword = null;
 	
@@ -23,6 +24,20 @@ public class LoginActivity extends ActionBarActivity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_login);
+
+		final EditText studentIdInput = (EditText) findViewById(R.id.input_student_id);
+		final EditText passwordInput = (EditText) findViewById(R.id.input_password);
+		
+		//Try to fetch the login information  
+		mStudentId = PrefUtil.getStudentId(this);
+		mPassword = PrefUtil.getPassword(this);
+		
+		if(mStudentId!=null && mPassword!=null) {
+			//If the login information exists, automatically attempt login.
+			studentIdInput.setText(mStudentId);
+			passwordInput.setText(mPassword);
+			attemptLogin();
+		}
 		
 		Button signInButton = (Button) findViewById(R.id.button_sign_in);
 		signInButton.setOnClickListener(new View.OnClickListener() {
@@ -33,8 +48,7 @@ public class LoginActivity extends ActionBarActivity {
 					/**
 					 * Get content when this button is clicked
 					 */
-					EditText studentIdInput = (EditText) findViewById(R.id.input_student_id);
-					EditText passwordInput = (EditText) findViewById(R.id.input_password);
+					//TODO : check validity of the input
 					mStudentId = studentIdInput.getText().toString();
 					mPassword = passwordInput.getText().toString();
 					attemptLogin();
@@ -52,10 +66,15 @@ public class LoginActivity extends ActionBarActivity {
 		LoginTask loginTask = new LoginTask (LoginActivity.this,mStudentId, mPassword) {
 			@Override
 			protected void onSuccess() {
-				if (pd.isShowing()) pd.dismiss();
-				Toast.makeText(LoginActivity.this, "성공"
+				Toast.makeText(context, "성공"
 					+Long.valueOf(PrefUtil.getTimeStamp(LoginActivity.this)).toString(), Toast.LENGTH_SHORT).show();
-				startActivity(new Intent(LoginActivity.this,SubmitActivity.class));
+				//Save the login information if the user wants it, otherwise delete it.
+				CheckBox rememberCheckBox = (CheckBox) findViewById(R.id.checkbox_remember_credential);
+				if (rememberCheckBox.isChecked()) PrefUtil.saveLoginInfo(context, mStudentId, mPassword);
+				else PrefUtil.deleteLoginInfo(context);
+				
+				startActivity(new Intent(context,SubmitActivity.class));
+				if (pd.isShowing()) pd.dismiss();
 			}
 			@Override
 			protected void onFailure(Exception e) {
