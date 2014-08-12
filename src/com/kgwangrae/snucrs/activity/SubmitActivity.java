@@ -4,13 +4,14 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v7.app.ActionBarActivity;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.Toast;
 
 import com.kgwangrae.snucrs.R;
 
 public class SubmitActivity extends ActionBarActivity implements Handler.Callback {
+	private final static String TAG = "SubmitActivity"; 
 	private Handler mHandler = null;
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -22,14 +23,14 @@ public class SubmitActivity extends ActionBarActivity implements Handler.Callbac
 			@Override
 			public void run() {
 				if (System.currentTimeMillis() > tmp ) {
-					Toast.makeText(SubmitActivity.this, Long.valueOf(System.currentTimeMillis()).toString(), Toast.LENGTH_SHORT).show();
+					Log.e(TAG,Long.valueOf(System.currentTimeMillis()).toString());
 				}
 				mHandler.postDelayed(this, 2000);
 			}
 		};
 		mHandler.post(refresher);
 	}
-
+	
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 
