@@ -22,6 +22,14 @@ import com.kgwangrae.snucrs.utils.CommUtil.PageChangedException;
  */
 @SuppressWarnings("serial")
 public class LoginUtil {
+	/**
+	 * Returns whether currently saved credential is older than 10 minutes.
+	 * @param c
+	 * @return
+	 */
+	public static boolean isCredentialOld (Context c) {
+		return (System.currentTimeMillis() - PrefUtil.getTimeStamp(c) > 590000);
+	}
 	private static class WrongCredentialException extends Exception {
 		private WrongCredentialException (String TAG) {
 			Log.e(TAG,"Authentication failed due to wrong credential.");
