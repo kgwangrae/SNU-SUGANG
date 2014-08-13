@@ -1,34 +1,28 @@
 package com.kgwangrae.snucrs.activity;
 
 import android.os.Bundle;
-import android.os.Handler;
 import android.os.Message;
 import android.support.v7.app.ActionBarActivity;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
 import com.kgwangrae.snucrs.R;
+import com.kgwangrae.snucrs.utils.PrefUtil;
+import com.kgwangrae.snucrs.utils.LoginUtil.RefreshHandler;
 
-public class SubmitActivity extends ActionBarActivity implements Handler.Callback {
+public class SubmitActivity extends ActionBarActivity {
 	private final static String TAG = "SubmitActivity"; 
-	private Handler mHandler = null;
+	private RefreshHandler mHandler = null;
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_submit);
-		mHandler = new Handler(this);
-		final long tmp = System.currentTimeMillis();
-		Runnable refresher = new Runnable() {
-			@Override
-			public void run() {
-				if (System.currentTimeMillis() > tmp ) {
-					Log.e(TAG,Long.valueOf(System.currentTimeMillis()).toString());
-				}
-				mHandler.postDelayed(this, 2000);
-			}
-		};
-		mHandler.post(refresher);
+		
+		//Sending message test
+		mHandler = new RefreshHandler(this);
+		Message msg = Message.obtain();
+		msg.what = RefreshHandler.jSessionIdMsg;
+		mHandler.sendMessage(msg);
 	}
 	
 	@Override
@@ -50,11 +44,4 @@ public class SubmitActivity extends ActionBarActivity implements Handler.Callbac
 		}
 		return super.onOptionsItemSelected(item);
 	}
-
-	@Override
-	public boolean handleMessage(Message msg) {
-		
-		// TODO Auto-generated method stub
-		return false;
-	} 
 }

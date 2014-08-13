@@ -4,13 +4,17 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.lang.ref.WeakReference;
 import java.net.HttpURLConnection;
 import java.net.URLEncoder;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import android.app.Activity;
 import android.content.Context;
+import android.os.Handler;
+import android.os.Message;
 import android.util.Base64;
 import android.util.Log;
 
@@ -22,14 +26,34 @@ import com.kgwangrae.snucrs.utils.CommUtil.PageChangedException;
  */
 @SuppressWarnings("serial")
 public class LoginUtil {
+	public final static long credentialLifeDuration = 590000;
 	/**
 	 * Returns whether currently saved credential is older than 10 minutes.
-	 * @param c
+	 * @param c 
 	 * @return
 	 */
 	public static boolean isCredentialOld (Context c) {
-		return (System.currentTimeMillis() - PrefUtil.getTimeStamp(c) > 590000);
+		return (System.currentTimeMillis() - PrefUtil.getTimeStamp(c) > credentialLifeDuration);
 	}
+	public static class RefreshHandler extends Handler {
+		private final static String TAG = "RefreshHandler";
+		public final static int jSessionIdMsg = 0;
+		private WeakReference<Activity> mActivity = null;
+		public RefreshHandler (Activity activity) {
+			mActivity = new WeakReference<Activity>(activity);
+		}
+		@Override
+		public void handleMessage (Message msg) {
+			Activity activity = mActivity.get();
+			if (msg.what == jSessionIdMsg) {
+				Log.i(TAG,"Refresh JSESSIONID request is handled!");
+				this.sendMessageDelayed(Message.obtain(msg), 2000);
+				//TESTING lifecycle of the looper in the main thread.
+				if(activity!=null) activity.finish();
+			}
+		}
+	}
+	
 	private static class WrongCredentialException extends Exception {
 		private WrongCredentialException (String TAG) {
 			Log.e(TAG,"Authentication failed due to wrong credential.");
