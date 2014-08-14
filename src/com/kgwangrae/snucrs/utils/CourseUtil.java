@@ -2,6 +2,7 @@ package com.kgwangrae.snucrs.utils;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
+import java.util.HashMap;
 import java.util.List;
 
 import org.jsoup.nodes.Document;
@@ -30,6 +31,24 @@ public class CourseUtil {
 		public static final Integer MAX_CAPACITY = 11;
 		public static final Integer CURR_CAPACITY = 12;
 		public static final Integer EXTRAS = 13;
+		
+		//TODO : also get apply codes (if necessary) later
+		
+		private HashMap<Integer, String> courseData = new HashMap<Integer,String>();
+		/**
+		 * @param attr One of the constants defined in this class.
+		 * @param value
+		 */
+		public void saveData (Integer attr, String value) {
+			courseData.put(attr, value);
+		}
+		/**
+		 * @param attr One of the constants defined in this class.
+		 * @param value
+		 */
+		public String getData (Integer attr, String value) {
+			return courseData.get(attr);
+		}
 	}
 	public static class CourseLoadTask extends BaseAsyncTask {
 		private final static String TAG = "CourseLoadTask";
