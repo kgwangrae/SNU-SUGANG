@@ -20,8 +20,7 @@
     <item
         android:id="@+id/action_next"
         android:orderInCategory="200"
-        android:icon="@android:drawable/ic_menu_send"
         android:title="@string/action_next"
-        app:showAsAction="always|withText"/>
+        app:showAsAction="always"/>
     
 </menu>

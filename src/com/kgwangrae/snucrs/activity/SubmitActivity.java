@@ -7,7 +7,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 
 import com.kgwangrae.snucrs.R;
-import com.kgwangrae.snucrs.utils.PrefUtil;
 import com.kgwangrae.snucrs.utils.LoginUtil.RefreshHandler;
 
 public class SubmitActivity extends ActionBarActivity {

@@ -49,7 +49,7 @@ public class LoginUtil {
 				Log.i(TAG,"Refresh JSESSIONID request is handled!");
 				this.sendMessageDelayed(Message.obtain(msg), 2000);
 				//TESTING lifecycle of the looper in the main thread.
-				if(activity!=null) activity.finish();
+				//if(activity!=null) activity.finish();
 			}
 		}
 	}
