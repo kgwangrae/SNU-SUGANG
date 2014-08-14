@@ -52,24 +52,23 @@ public class CourseUtil {
 	}
 	public static class CourseLoadTask extends BaseAsyncTask {
 		private final static String TAG = "CourseLoadTask";
-		private WeakReference<Context> mContext = null;
 		private String result = null;
 		
 		public CourseLoadTask (Context c) {
-			this.mContext = new WeakReference<Context>(c);
-			this.context = null; //this old context value will be deprecated soon
+			super(c);
 		}
 		
 		@Override 
 		protected boolean backgroundTask() {
 			try {
-				Context c = mContext.get();
+				Context c = weakContext.get();
 				if (c==null) 
 					throw new NullPointerException("Current context is null. Exiting..");
 				
 				Document coursesDoc = CommUtil.getJsoupDoc(c,CommUtil.getURL(CommUtil.INTEREST), 
 																				CommUtil.getURL(CommUtil.MAIN));
-				Elements coursesTable = coursesDoc.select("div.gray_top");
+				Elements tmp = coursesDoc.select("div.gray_top");
+				Elements coursesTable = tmp.select(".tbl_basic");
 				result = coursesTable.toString();
 				return true;
 			}
@@ -96,6 +95,9 @@ public class CourseUtil {
 		}
 	}
 	public static class CaptchaLoadTask extends BaseAsyncTask {
+		public CaptchaLoadTask (Context c) {
+			super(c);
+		}
 		@Override 
 		protected boolean backgroundTask() {
 			return false;
@@ -110,6 +112,9 @@ public class CourseUtil {
 		}
 	}
 	public static class CourseSubmitTask extends BaseAsyncTask {
+		public CourseSubmitTask (Context c) {
+			super(c);
+		}
 		@Override 
 		protected boolean backgroundTask() {
 			return false;

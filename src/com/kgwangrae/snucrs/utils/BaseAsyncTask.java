@@ -1,5 +1,7 @@
 package com.kgwangrae.snucrs.utils;
 
+import java.lang.ref.WeakReference;
+
 import android.content.Context;
 import android.os.AsyncTask;
 
@@ -9,15 +11,21 @@ import android.os.AsyncTask;
  * Developers can save a reference to the exception raised while executing 
  * so that it can be used at the outside of this AsyncTask.
  * onPostExecute was replaced by onSuccess and onFailure.
+ * Currently this class has both weak and strong references to the context. 
+ * TODO : replace context reference with {@link WeakReference} 
  * @author Gwangrae Kim
  */
 public abstract class BaseAsyncTask extends AsyncTask<Void, Void, Boolean> {
 	protected Context context = null;
 	protected Exception raisedException = null;
+	protected WeakReference<Context> weakContext = null;
 	
-	protected BaseAsyncTask () {}
+	@SuppressWarnings("unused")
+	private BaseAsyncTask () {}
 	protected BaseAsyncTask (Context context) {
+		super();
 		this.context = context;
+		this.weakContext = new WeakReference<Context>(context);
 	}
 	
 	//Parameters needed for retrying this AsyncTask

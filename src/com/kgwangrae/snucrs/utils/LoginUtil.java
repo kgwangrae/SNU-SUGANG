@@ -29,7 +29,7 @@ public class LoginUtil {
 	public final static long credentialLifeDuration = 590000;
 	/**
 	 * Returns whether currently saved credential is older than 10 minutes.
-	 * @param c 
+	 * @param c Please make sure this context is not null.
 	 * @return
 	 */
 	public static boolean isCredentialOld (Context c) {
