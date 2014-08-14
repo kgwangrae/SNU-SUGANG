@@ -4,7 +4,7 @@ import android.content.Context;
 import android.os.AsyncTask;
 
 /**
- * Basic form of AsyncTask used in this application. 
+ * Basic form of AsyncTask<Void,Void,Boolean> used in this application. 
  * Provides operations to retry the job after an exception occurs.
  * Developers can save a reference to the exception raised while executing 
  * so that it can be used at the outside of this AsyncTask.
@@ -68,6 +68,7 @@ public abstract class BaseAsyncTask extends AsyncTask<Void, Void, Boolean> {
 	protected abstract void onSuccess ();
 	/**
 	 * This method is called on the UI thread after the job is finished with some errors.
+	 * However, you should manually enable logging the stack trace if you want to.
 	 * @param exceptionInstance If no reference to the exception was saved during execution, this value will be null.
 	 */
 	protected abstract void onFailure (Exception exceptionInstance);

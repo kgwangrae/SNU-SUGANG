@@ -1,27 +1,30 @@
 package com.kgwangrae.snucrs.activity;
 
 import android.os.Bundle;
-import android.os.Message;
 import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 
 import com.kgwangrae.snucrs.R;
-import com.kgwangrae.snucrs.utils.LoginUtil.RefreshHandler;
+import com.kgwangrae.snucrs.utils.CourseUtil.CourseLoadTask;
 
 public class SubmitActivity extends ActionBarActivity {
 	private final static String TAG = "SubmitActivity"; 
-	private RefreshHandler mHandler = null;
+	//private RefreshHandler mHandler = null;
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_submit);
 		
 		//Sending message test
-		mHandler = new RefreshHandler(this);
-		Message msg = Message.obtain();
-		msg.what = RefreshHandler.jSessionIdMsg;
-		mHandler.sendMessage(msg);
+		//mHandler = new RefreshHandler(this);
+		//Message msg = Message.obtain();
+		//msg.what = RefreshHandler.jSessionIdMsg;
+		//mHandler.sendMessage(msg);
+		//TODO : remove all strong or implicit references to Activities
+		
+		//Fetch course list 
+		new CourseLoadTask(this).execute();
 	}
 	
 	@Override

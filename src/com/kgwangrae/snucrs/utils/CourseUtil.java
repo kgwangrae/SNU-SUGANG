@@ -1,8 +1,14 @@
 package com.kgwangrae.snucrs.utils;
 
+import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.util.List;
 
+import org.jsoup.nodes.Document;
+import org.jsoup.select.Elements;
+
 import android.content.Context;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
@@ -26,17 +32,48 @@ public class CourseUtil {
 		public static final Integer EXTRAS = 13;
 	}
 	public static class CourseLoadTask extends BaseAsyncTask {
+		private final static String TAG = "CourseLoadTask";
+		private WeakReference<Context> mContext = null;
+		private String result = null;
+		
+		public CourseLoadTask (Context c) {
+			this.mContext = new WeakReference<Context>(c);
+			this.context = null; //this old context value will be deprecated soon
+		}
+		
 		@Override 
 		protected boolean backgroundTask() {
+			try {
+				Context c = mContext.get();
+				if (c==null) 
+					throw new NullPointerException("Current context is null. Exiting..");
+				
+				Document coursesDoc = CommUtil.getJsoupDoc(c,CommUtil.getURL(CommUtil.INTEREST), 
+																				CommUtil.getURL(CommUtil.MAIN));
+				Elements coursesTable = coursesDoc.select("div.gray_top");
+				result = coursesTable.toString();
+				return true;
+			}
+			catch (IOException e) {
+				raisedException = e;
+			}
+			catch (Exception e) {
+				raisedException = e;
+			}
+			finally {
+				
+			}
 			return false;
 		}
 		
 		@Override
 		protected void onSuccess() {
+			Log.i(TAG,result);
 		}
 		
 		@Override
 		protected void onFailure(Exception exceptionInstance) {
+			Log.e(TAG,"Loading course list have failed.",exceptionInstance);
 		}
 	}
 	public static class CaptchaLoadTask extends BaseAsyncTask {

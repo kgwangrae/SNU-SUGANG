@@ -95,7 +95,6 @@ public class LoginUtil {
 				String loginPageURL = "http://sugang.snu.ac.kr/sugang/j_login";
 				loginCon 
 					= CommUtil.getSugangConnection(context, loginPageURL, CommUtil.getURL(CommUtil.MAIN));
-				loginCon.setInstanceFollowRedirects(false);  // To get Location header field, stop redirection.
 				//Write Login Data, Note current time.
 				timeStamp = System.currentTimeMillis();
 				writer = new OutputStreamWriter(loginCon.getOutputStream());

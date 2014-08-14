@@ -1,9 +1,14 @@
 package com.kgwangrae.snucrs.utils;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 
 import android.content.Context;
 import android.util.Log;
@@ -70,6 +75,7 @@ public class CommUtil {
 		con.setReadTimeout(3000); // 1. Limit waiting time
 		con.setUseCaches(false); // 2. Disable cache
 		con.setDoOutput(true); // 3. Enable writing data such as form data. 
+		con.setInstanceFollowRedirects(false);  // To get exact header field, stop redirection.
 		con.setRequestProperty("Host","sugang.snu.ac.kr"); // 4. Set Host header
 		new URL (referer); 
 		con.setRequestProperty("Referer", referer); //5. Test validity of the given referer and set Referer header.
@@ -81,8 +87,39 @@ public class CommUtil {
 			PrefUtil.renewTimestamp(c);
 		}
 		else con.setRequestProperty("Cookie", "enter=Y"); //7,8 : Set cookie properties
-		con.setRequestMethod("POST"); //TODO : explain it later
+		con.setRequestMethod("POST"); //TODO : MUST explain 
+		//TODO : close all the Connections, Readers / Don't leak activity references
 		return con;
+	}
+	
+	/**
+	 * Convenient method for getting Jsoup Document for the page.
+	 * This method MUST NOT be called on the UI thread.
+	 * @param c
+	 * @param url
+	 * @param referer
+	 * @return
+	 * @throws IOException
+	 * @throws MalformedURLException
+	 */
+	public static Document getJsoupDoc (Context c, String url, String referer) 
+													throws IOException, MalformedURLException {
+		HttpURLConnection con = null;
+		BufferedReader br = null;
+		try {
+			con = getSugangConnection(c, url, referer);
+			br = new BufferedReader(new InputStreamReader(con.getInputStream()));
+			
+			StringBuffer strbuf = new StringBuffer();
+			for (String tmp = br.readLine() ; tmp != null ; tmp = br.readLine()) {
+				strbuf.append(tmp);
+			}
+			return Jsoup.parse(strbuf.toString());
+		}
+		finally {
+			if (con != null) con.disconnect();
+			if (br != null) br.close();
+		}
 	}
 	
 	/**
