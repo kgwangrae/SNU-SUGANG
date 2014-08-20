@@ -76,10 +76,13 @@ public class CourseUtil {
 			//May be inefficient, but quite clear.
 			String result = getData(NAME)+" "+getData(SECTION);
 			if (getData(INSTRUCTOR) != null) {
-				result +=  ", "+getData(INSTRUCTOR);
+				result +=  "\n"+getData(INSTRUCTOR);
 			}
 			if (getData(TIME) != null) {
-				result += ", "+getData(TIME);
+				result += "\n"+getData(TIME);
+			}
+			if (getData(EXTRAS) != null) {
+				result += "\n"+getData(EXTRAS);
 			}
 			return result;
 		}
@@ -272,13 +275,11 @@ public class CourseUtil {
 				else return result;
 			}
 			catch (IOException e) {
-				System.out.println("1");
 				if (isRetrialRequired())
 					return retryDelayed(TAG);
 				raisedException = e;
 			}
 			catch (Exception e) {
-				System.out.println("2");
 				raisedException = e;
 			}
 			finally {
