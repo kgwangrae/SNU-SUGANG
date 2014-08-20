@@ -29,7 +29,7 @@ public class LoginUtil {
 	public final static long credentialLifeDuration = 590000;
 	/**
 	 * Returns whether currently saved credential is older than 10 minutes.
-	 * @param c Please make sure this context is not null.
+	 * @param c Please make sure this mContext is not null.
 	 * @return
 	 */
 	public static boolean isCredentialOld (Context c) {
@@ -94,7 +94,7 @@ public class LoginUtil {
 			try {		
 				String loginPageURL = "http://sugang.snu.ac.kr/sugang/j_login";
 				loginCon 
-					= CommUtil.getSugangConnection(context, loginPageURL, CommUtil.getURL(CommUtil.MAIN));
+					= CommUtil.getSugangConnection(mContext, loginPageURL, CommUtil.getURL(CommUtil.MAIN));
 				//Write Login Data, Note current time.
 				timeStamp = System.currentTimeMillis();
 				writer = new OutputStreamWriter(loginCon.getOutputStream());
@@ -144,14 +144,14 @@ public class LoginUtil {
 					throw new PageChangedException(TAG);
 				}
 				//finally succeeded. Save the credential for further use.
-				PrefUtil.setJSessionId(context, jSessionId, timeStamp);
+				PrefUtil.setJSessionId(mContext, jSessionId, timeStamp);
 				
 				/**
 				 * Verify again with the given JSESSIONID by checking the main page 
 				 * now has some certain Strings that indicates the login was successful.
 				 */
 				checkCon 
-					= CommUtil.getSugangConnection(context, CommUtil.getURL(CommUtil.MAIN), loginPageURL);
+					= CommUtil.getSugangConnection(mContext, CommUtil.getURL(CommUtil.MAIN), loginPageURL);
 				BufferedReader br = new BufferedReader(new InputStreamReader(checkCon.getInputStream()));
 				for (String line=br.readLine(); line!=null; line=br.readLine()) {
 					if(line.contains("로그인전")) {

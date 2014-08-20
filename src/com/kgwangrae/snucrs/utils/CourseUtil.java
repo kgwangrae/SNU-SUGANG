@@ -1,10 +1,13 @@
 package com.kgwangrae.snucrs.utils;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -16,12 +19,17 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.View.OnTouchListener;
 import android.view.ViewGroup;
 import android.widget.BaseExpandableListAdapter;
+import android.widget.TextView;
 
-import com.kgwangrae.snucrs.utils.LoginUtil.IPChangedException;
+import com.kgwangrae.snucrs.R;
 import com.kgwangrae.snucrs.utils.CommUtil.PageChangedException;
+import com.kgwangrae.snucrs.utils.LoginUtil.IPChangedException;
 
 /**
  * @author Gwangrae Kim
@@ -66,18 +74,12 @@ public class CourseUtil {
 		@Override
 		public String toString() {
 			//May be inefficient, but quite clear.
-			String result = getData(NAME)+" ("+getData(CODE)+", "+getData(TYPE)+")";
+			String result = getData(NAME)+" "+getData(SECTION);
 			if (getData(INSTRUCTOR) != null) {
 				result +=  ", "+getData(INSTRUCTOR);
 			}
 			if (getData(TIME) != null) {
 				result += ", "+getData(TIME);
-			}
-			if (getData(VENUE) != null) {
-				result += ", "+getData(VENUE);
-			} 
-			if (getData(CAPACITY) != null) {
-				result += ", 정원 "+getData(CAPACITY);
 			}
 			return result;
 		}
@@ -125,7 +127,7 @@ public class CourseUtil {
 		@Override 
 		protected LinkedList<Course> backgroundTask() {
 			try {				
-				Document coursesDoc = CommUtil.getJsoupDoc(context,CommUtil.getURL(CommUtil.INTEREST), 
+				Document coursesDoc = CommUtil.getJsoupDoc(mContext,CommUtil.getURL(CommUtil.INTEREST), 
 																				CommUtil.getURL(CommUtil.MAIN));
 				Element coursesTable = null;
 				try {
@@ -262,16 +264,21 @@ public class CourseUtil {
 		protected Bitmap backgroundTask() {
 			HttpURLConnection numberCon = null;
 			try {
-				numberCon = CommUtil.getSugangConnection(context, CommUtil.getURL(CommUtil.CAPTCHA)
+				numberCon = CommUtil.getSugangConnection(mContext, CommUtil.getURL(CommUtil.CAPTCHA)
 																						, CommUtil.getURL(CommUtil.INTEREST));
-				return BitmapFactory.decodeStream(numberCon.getInputStream());
+				Bitmap result = BitmapFactory.decodeStream(numberCon.getInputStream());
+				if (result == null)
+					throw new BaseException(TAG, "Unknown error!");
+				else return result;
 			}
 			catch (IOException e) {
+				System.out.println("1");
 				if (isRetrialRequired())
 					return retryDelayed(TAG);
 				raisedException = e;
 			}
 			catch (Exception e) {
+				System.out.println("2");
 				raisedException = e;
 			}
 			finally {
@@ -344,39 +351,45 @@ public class CourseUtil {
 	}
 	
 	public static class CourseAdapter extends BaseExpandableListAdapter {
+		private final static String TAG = "CourseAdapter";
+		private LinkedList<Course> mCourses = null;
+		private Map<Course, LinkedList<Course>> alternativeCourses = null;
+		private Context mContext = null;
+
+		public CourseAdapter (Context context, LinkedList<Course> courses) {
+			this.mContext = context;
+			this.mCourses = courses;
+		}
+		public LinkedList<Course> getCourses() {
+			return mCourses;
+		}
+		
 		@Override
 		public int getGroupCount() {
-			// TODO Auto-generated method stub
-			return 0;
-		}
+			return mCourses.size();
+		} 
 		@Override
 		public int getChildrenCount(int groupPosition) {
 			// TODO Auto-generated method stub
-			return 0;
+			return 1;
 		}
 		@Override
 		public Object getGroup(int groupPosition) {
-			// TODO Auto-generated method stub
-			return null;
+			return mCourses.get(groupPosition);
 		}
 		@Override
 		public Object getChild(int groupPosition, int childPosition) {
 			// TODO Auto-generated method stub
-			return null;
+			return new Object();
 		}
-
 		@Override
 		public long getGroupId(int groupPosition) {
-			// TODO Auto-generated method stub
-			return 0;
+			return groupPosition;
 		}
-
 		@Override
 		public long getChildId(int groupPosition, int childPosition) {
-			// TODO Auto-generated method stub
-			return 0;
+			return childPosition;
 		}
-
 		@Override
 		public boolean hasStableIds() {
 			// TODO Auto-generated method stub
@@ -384,17 +397,89 @@ public class CourseUtil {
 		}
 
 		@Override
-		public View getGroupView(int groupPosition, boolean isExpanded,
+		public View getGroupView(final int groupPosition, boolean isExpanded,
 				View convertView, ViewGroup parent) {
-			// TODO Auto-generated method stub
-			return null;
+			final Course currCourse = mCourses.get(groupPosition);
+			View resultView = null;
+			if (convertView != null)
+				resultView = convertView;
+			else resultView = LayoutInflater.from(mContext).inflate(R.layout.list_courses_parent, null);
+			if (groupPosition%4 == 3)
+				resultView.setBackgroundColor(0x5022ffaa);
+			else if (groupPosition%4 == 2)
+				resultView.setBackgroundColor(0x3522ffaa);
+			else if (groupPosition%4 == 1)
+				resultView.setBackgroundColor(0x2022ffaa);
+			else 
+				resultView.setBackgroundColor(0x0522ffaa);
+			//ConvertView still has its previous color. So you must repaint it!
+			
+			TextView groupText = (TextView) resultView.findViewById(R.id.textview_main_course);
+			TextView upBtn = (TextView) resultView.findViewById(R.id.textview_main_course_up);
+			TextView downBtn = (TextView) resultView.findViewById(R.id.textview_main_course_down);
+			groupText.setText("** "+Integer.valueOf(groupPosition+1).toString()+"순위 **\n"
+									+currCourse.toString());
+			
+			upBtn.setOnTouchListener(new OnTouchListener() {
+				@Override
+				public boolean onTouch(View v, MotionEvent event) {
+					if (event.getAction() == MotionEvent.ACTION_DOWN) {
+						v.setBackgroundColor(0x46c5c1ff);
+						return true;
+					}
+					else if (event.getAction() == MotionEvent.ACTION_UP) {
+						v.setBackgroundColor(0x00000000);
+						if (groupPosition > 0) {
+							mCourses.remove(groupPosition);
+							mCourses.add(groupPosition-1, currCourse);
+							notifyDataSetChanged();
+						}
+						return true;
+					}
+					else if (event.getAction() == MotionEvent.ACTION_CANCEL) {
+						v.setBackgroundColor(0x00000000);
+						return true;
+					}
+					return false;
+				}
+			});
+			downBtn.setOnTouchListener(new OnTouchListener() {
+				@Override
+				public boolean onTouch(View v, MotionEvent event) {
+					if (event.getAction() == MotionEvent.ACTION_DOWN) {
+						v.setBackgroundColor(0x46c5c1ff);
+						return true;
+					}
+					else if (event.getAction() == MotionEvent.ACTION_UP) {
+						v.setBackgroundColor(0x00000000);
+						if (groupPosition < (mCourses.size() - 1)) {
+							mCourses.remove(groupPosition);
+							mCourses.add(groupPosition+1, currCourse);
+							notifyDataSetChanged();
+						}
+						return true;
+					}
+					else if (event.getAction() == MotionEvent.ACTION_CANCEL) {
+						v.setBackgroundColor(0x00000000);
+						return true;
+					}
+					return false;
+				}
+			});
+			
+			upBtn.setOnClickListener(null);
+			downBtn.setOnClickListener(null);
+			
+			return resultView;
 		}
 
 		@Override
 		public View getChildView(int groupPosition, int childPosition,
 				boolean isLastChild, View convertView, ViewGroup parent) {
-			// TODO Auto-generated method stub
-			return null;
+			View resultView = convertView;
+			if (resultView == null) 
+				resultView = LayoutInflater.from(mContext).inflate(R.layout.list_courses_child, null);
+			return resultView;
 		}
 
 		@Override

@@ -10,19 +10,19 @@ import android.util.Log;
  * Developers can save a reference of the raised exception to 'raisedException'
  * so that it can be used at the outside of this AsyncTask.
  * onPostExecute was replaced by onSuccess and onFailure for convenience.
- * NOTE : This class must not be used for long-awaiting tasks because it has a strong reference to the caller context
+ * NOTE : This class must not be used for long-awaiting tasks because it has a strong reference to the caller mContext
  * , which may disturb garbage collection of that and may cause memory leak.
  * @author Gwangrae Kim
  */
 public abstract class BaseAsyncTask <Result> extends AsyncTask<Void, Void, Result> {
-	protected Context context = null;
+	protected Context mContext = null;
 	protected Exception raisedException = null;
 	
 	@SuppressWarnings("unused")
 	private BaseAsyncTask () {}
 	protected BaseAsyncTask (Context context) {
 		super();
-		this.context = context;
+		this.mContext = context;
 	}
 	
 	//Parameters needed for retrying this AsyncTask

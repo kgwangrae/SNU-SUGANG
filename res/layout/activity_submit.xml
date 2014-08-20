@@ -1,13 +1,21 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
+    android:animateLayoutChanges="true"
     tools:context="com.kgwangrae.snucrs.activity.SubmitActivity">
-    <ExpandableListView 
-        android:id="@+id/list_android"
+    <ProgressBar 
+        android:id="@+id/progressbar_loading_interest_courses"
+        android:indeterminate="true"
+        android:layout_height="wrap_content"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"/>
-</LinearLayout>
+        android:layout_margin="40dp"
+        style="?android:attr/progressBarStyleHorizontal" 
+        />
+    <ExpandableListView 
+        android:id="@+id/list_courses"
+        android:visibility="gone"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+</merge>
 

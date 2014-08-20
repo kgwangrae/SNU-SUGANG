@@ -70,14 +70,14 @@ public class LoginActivity extends ActionBarActivity {
 				//IMPORTANT : Avoid doing anything after this activity instance is destroyed
 				if (isFinishing()) return;
 				
-				Toast.makeText(context, "성공"
+				Toast.makeText(mContext, "성공"
 					+Long.valueOf(PrefUtil.getTimeStamp(LoginActivity.this)).toString(), Toast.LENGTH_SHORT).show();
 				//Save the login information if the user wants it, otherwise delete it.
 				CheckBox rememberCheckBox = (CheckBox) findViewById(R.id.checkbox_remember_credential);
-				if (rememberCheckBox.isChecked()) PrefUtil.saveLoginInfo(context, mStudentId, mPassword);
-				else PrefUtil.deleteLoginInfo(context);
+				if (rememberCheckBox.isChecked()) PrefUtil.saveLoginInfo(mContext, mStudentId, mPassword);
+				else PrefUtil.deleteLoginInfo(mContext);
 				
-				startActivity(new Intent(context,SubmitActivity.class));
+				startActivity(new Intent(mContext,SubmitActivity.class));
 				if (pd.isShowing()) pd.dismiss();
 			}
 			@Override
