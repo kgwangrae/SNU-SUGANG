@@ -1,12 +1,16 @@
 package com.kgwangrae.snucrs.activity;
 
+import java.util.LinkedList;
+
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
 import com.kgwangrae.snucrs.R;
-import com.kgwangrae.snucrs.utils.CourseUtil.CourseLoadTask;
+import com.kgwangrae.snucrs.utils.CourseUtil.Course;
+import com.kgwangrae.snucrs.utils.CourseUtil.InterestCourseLoadTask;
 
 public class SubmitActivity extends ActionBarActivity {
 	private final static String TAG = "SubmitActivity"; 
@@ -21,15 +25,22 @@ public class SubmitActivity extends ActionBarActivity {
 		//Message msg = Message.obtain();
 		//msg.what = RefreshHandler.jSessionIdMsg;
 		//mHandler.sendMessage(msg);
-		//TODO : remove all strong or implicit references to Activities
 		
-		//Fetch course list 
-		new CourseLoadTask(this).execute();
+		//Fetch course list
+		new InterestCourseLoadTask(this) {
+			@Override
+			protected void onSuccess(LinkedList<Course> result) {
+				Log.i(TAG,result.toString());
+			}
+			@Override
+			protected void onFailure(Exception exceptionInstance) {
+				Log.e(TAG, "An error ", exceptionInstance);
+			}	
+		}.execute();
 	}
 	
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
-
 		// Inflate the menu; this adds items to the action bar if it is present.
 		getMenuInflater().inflate(R.menu.submit, menu);
 		return true;

@@ -16,6 +16,7 @@ import com.kgwangrae.snucrs.utils.PrefUtil;
 
 public class LoginActivity extends ActionBarActivity {
 
+	@SuppressWarnings("unused")
 	private final static String TAG = "LoginActivity";
 	private String mStudentId = null;
 	private String mPassword = null;
@@ -48,7 +49,7 @@ public class LoginActivity extends ActionBarActivity {
 					/**
 					 * Get content when this button is clicked
 					 */
-					//TODO : check validity of the input
+					//May perform validation later.
 					mStudentId = studentIdInput.getText().toString();
 					mPassword = passwordInput.getText().toString();
 					attemptLogin();
@@ -65,7 +66,10 @@ public class LoginActivity extends ActionBarActivity {
 		
 		LoginTask loginTask = new LoginTask (LoginActivity.this,mStudentId, mPassword) {
 			@Override
-			protected void onSuccess() {
+			protected void onSuccess(Boolean result) {
+				//IMPORTANT : Avoid doing anything after this activity instance is destroyed
+				if (isFinishing()) return;
+				
 				Toast.makeText(context, "성공"
 					+Long.valueOf(PrefUtil.getTimeStamp(LoginActivity.this)).toString(), Toast.LENGTH_SHORT).show();
 				//Save the login information if the user wants it, otherwise delete it.
@@ -78,6 +82,8 @@ public class LoginActivity extends ActionBarActivity {
 			}
 			@Override
 			protected void onFailure(Exception e) {
+				if (isFinishing()) return;
+				
 				if (pd.isShowing()) pd.dismiss();
 				Toast.makeText(LoginActivity.this, "실패", Toast.LENGTH_SHORT).show();
 			}

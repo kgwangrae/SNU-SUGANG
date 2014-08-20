@@ -1,31 +1,28 @@
 package com.kgwangrae.snucrs.utils;
 
-import java.lang.ref.WeakReference;
-
 import android.content.Context;
 import android.os.AsyncTask;
+import android.util.Log;
 
 /**
- * Basic form of AsyncTask<Void,Void,Boolean> used in this application. 
+ * Basic form of AsyncTask used in this application. 
  * Provides operations to retry the job after an exception occurs.
- * Developers can save a reference to the exception raised while executing 
+ * Developers can save a reference of the raised exception to 'raisedException'
  * so that it can be used at the outside of this AsyncTask.
- * onPostExecute was replaced by onSuccess and onFailure.
- * Currently this class has both weak and strong references to the context. 
- * TODO : replace context reference with {@link WeakReference} 
+ * onPostExecute was replaced by onSuccess and onFailure for convenience.
+ * NOTE : This class must not be used for long-awaiting tasks because it has a strong reference to the caller context
+ * , which may disturb garbage collection of that and may cause memory leak.
  * @author Gwangrae Kim
  */
-public abstract class BaseAsyncTask extends AsyncTask<Void, Void, Boolean> {
+public abstract class BaseAsyncTask <Result> extends AsyncTask<Void, Void, Result> {
 	protected Context context = null;
 	protected Exception raisedException = null;
-	protected WeakReference<Context> weakContext = null;
 	
 	@SuppressWarnings("unused")
 	private BaseAsyncTask () {}
 	protected BaseAsyncTask (Context context) {
 		super();
 		this.context = context;
-		this.weakContext = new WeakReference<Context>(context);
 	}
 	
 	//Parameters needed for retrying this AsyncTask
@@ -39,41 +36,61 @@ public abstract class BaseAsyncTask extends AsyncTask<Void, Void, Boolean> {
 		return (System.currentTimeMillis() - initialTime <= TIMEOUT && trialCount < MAX_TRIAL_COUNT);
 	}
 	/**
-	 * Retry the task.
+	 * Retry the task without checking limit params.
 	 * This method must not be called on the main thread!
-	 * @return Whether this retrial was successful.
+	 * @return Result of this retrial
 	 */
-	protected final boolean retry() {
+	protected final Result retry() {
 		return doInBackground((Void) null);
 	}
 	/**
-	 * Use this method to use the retrial functionality of this class.
+	 * Retry the task after the predefined delay period without checking limit params.
+	 * This method must not be called on the main thread!
+	 * @param TAG
+	 * @return	Result of this retrial
+	 */
+	protected final Result retryDelayed(String TAG) {
+		try { 
+			Thread.sleep(IO_RETRIAL_INTERVAL); 
+		}
+		catch (InterruptedException ie) { 
+			Log.e(TAG,ie.getMessage(),ie); 
+		}
+		return doInBackground((Void) null);
+	}
+	/**
+	 * Use this method to make use of the retrial functionality of this class.
 	 * @return This instance of {@link BaseAsyncTask}
 	 */
-	public final BaseAsyncTask execute () {
+	public final BaseAsyncTask<Result> execute () {
 		super.execute((Void) null);
 		initialTime = System.currentTimeMillis();
 		return this;
 	}
 	
 	@Override
-	protected final Boolean doInBackground(Void... params) {
+	protected final Result doInBackground(Void... params) {
 		trialCount++;
 		return backgroundTask();
 	}
 	
-	protected abstract boolean backgroundTask();
+	/**
+	 * @return When the job succeeds then it must return the result object
+	 * , otherwise it must return null. (NOT false!)
+	 * NOTE : Especially warn this when you're returning Boolean.
+	 */
+	protected abstract Result backgroundTask();
 	
 	@Override 
-	protected final void onPostExecute (Boolean result) {
-		if (result) onSuccess();
+	protected final void onPostExecute (Result result) {
+		if (result != null) onSuccess(result);
 		else onFailure(raisedException);
 	}
 	
 	/**
 	 * This method is called on the UI thread after the job is finished without any error.
 	 */
-	protected abstract void onSuccess ();
+	protected abstract void onSuccess (Result result);
 	/**
 	 * This method is called on the UI thread after the job is finished with some errors.
 	 * However, you should manually enable logging the stack trace if you want to.

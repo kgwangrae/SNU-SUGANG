@@ -36,6 +36,7 @@ public class LoginUtil {
 		return (System.currentTimeMillis() - PrefUtil.getTimeStamp(c) > credentialLifeDuration);
 	}
 	public static class RefreshHandler extends Handler {
+		//TODO
 		private final static String TAG = "RefreshHandler";
 		public final static int jSessionIdMsg = 0;
 		private WeakReference<Activity> mActivity = null;
@@ -44,28 +45,27 @@ public class LoginUtil {
 		}
 		@Override
 		public void handleMessage (Message msg) {
+			@SuppressWarnings("unused")
 			Activity activity = mActivity.get();
 			if (msg.what == jSessionIdMsg) {
 				Log.i(TAG,"Refresh JSESSIONID request is handled!");
 				this.sendMessageDelayed(Message.obtain(msg), 2000);
-				//TESTING lifecycle of the looper in the main thread.
-				//if(activity!=null) activity.finish();
 			}
 		}
 	}
 	
-	private static class WrongCredentialException extends Exception {
+	private static class WrongCredentialException extends BaseException {
 		private WrongCredentialException (String TAG) {
-			Log.e(TAG,"Authentication failed due to wrong credential.");
+			super(TAG,"Authentication failed due to wrong credential.");
 		}
 	}
-	public static class IPChangedException extends Exception {
-		private IPChangedException (String TAG) {
-			Log.e(TAG,"Logged out due to IP address change. Please use stable connection such as Wi-Fi.");
+	public static class IPChangedException extends BaseException {
+		public IPChangedException (String TAG) {
+			super(TAG,"Logged out due to IP address change. Please use stable connection such as Wi-Fi.");
 		}
 	}
 	
-	public static abstract class LoginTask extends BaseAsyncTask {
+	public static abstract class LoginTask extends BaseAsyncTask <Boolean> {
 		protected final static String TAG = "LoginTask";
 		
 		private String jSessionId = null;
@@ -79,8 +79,8 @@ public class LoginUtil {
 		private HttpURLConnection loginCon = null, checkCon = null;
 		private OutputStreamWriter writer = null;
 		
-		public LoginTask (Context c, String studentId, String plainPassword) {
-			super(c);
+		public LoginTask (Context context, String studentId, String plainPassword) {
+			super(context);
 			this.studentId = studentId;
 			this.plainPassword = plainPassword;
 			this.base64Password = Base64.encodeToString(plainPassword.getBytes(), Base64.DEFAULT);
@@ -90,7 +90,7 @@ public class LoginUtil {
 		}
 		
 		@Override
-		protected final boolean backgroundTask() {
+		protected final Boolean backgroundTask() {
 			try {		
 				String loginPageURL = "http://sugang.snu.ac.kr/sugang/j_login";
 				loginCon 
@@ -164,17 +164,12 @@ public class LoginUtil {
 			//Catch exceptions, starting from the most common one. 
 			catch (IOException e) {
 				raisedException = e;
-				if (isRetrialRequired()) {
-					try { Thread.sleep(IO_RETRIAL_INTERVAL); }
-					catch (InterruptedException ie) { Log.e(TAG,ie.getMessage(),ie); }
-					return retry();
-				}
-				else return false;
+				if (isRetrialRequired()) 
+					return retryDelayed(TAG);
 			}
 			catch (WrongCredentialException e) {
 				raisedException = e;
 				//Retrying is meaningless for this case.
-				return false;
 			}
 			catch (IPChangedException e) {
 				raisedException = e;
@@ -182,22 +177,17 @@ public class LoginUtil {
 					//No interval is required for this case.
 					return retry();
 				}
-				else return false;
 			}
 			catch (PageChangedException e) {
 				raisedException = e;
 				//See PageChangedException for detail why retrial is required for this exception.
 				if (isRetrialRequired()) {
-					try { Thread.sleep(IO_RETRIAL_INTERVAL); }
-					catch (InterruptedException ie) { Log.e(TAG,ie.getMessage(),ie); }
-					return retry();
+					return retryDelayed(TAG);
 				}
-				else return false;
 			}
 			catch (Exception e) {
 				raisedException = e;
 				//Catch unknown errors to avoid the app being killed by the system.
-				return false;
 			}
 			finally {
 				if(loginCon!=null) loginCon.disconnect();
@@ -206,8 +196,9 @@ public class LoginUtil {
 					try { writer.close(); }
 					catch (Exception e) {	e.printStackTrace(); }
 				}
-				if(raisedException!=null) Log.e(TAG, "An error occurred during signing in.", raisedException);
 			}
+			Log.e(TAG, "An error occurred during signing in.", raisedException);
+			return null;
 		}
 	}
 }

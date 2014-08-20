@@ -69,7 +69,7 @@ public class CommUtil {
 	 * @throws MalformedURLException Thrown when url or referer is invalid
 	 */
 	public static HttpURLConnection getSugangConnection (Context c, String url, String referer) 
-														throws IOException, MalformedURLException {
+																throws MalformedURLException, IOException {
 		String jSessionId = PrefUtil.getJSessionId(c);
 		HttpURLConnection con = (HttpURLConnection) new URL(url).openConnection();
 		con.setReadTimeout(3000); // 1. Limit waiting time
@@ -87,8 +87,7 @@ public class CommUtil {
 			PrefUtil.renewTimestamp(c);
 		}
 		else con.setRequestProperty("Cookie", "enter=Y"); //7,8 : Set cookie properties
-		con.setRequestMethod("POST"); //TODO : MUST explain 
-		//TODO : close all the Connections, Readers / Don't leak activity references
+		con.setRequestMethod("POST");
 		return con;
 	}
 	
@@ -124,11 +123,12 @@ public class CommUtil {
 	
 	/**
 	 * Thrown when sturcture of the SNUCRS web page is changed so that this application can no longer operate.
-	 * NOTE : It can be unexpectedly thrown when the web page is incompletely loaded (usually due to slow connection) 
+	 * NOTE : It can be unexpectedly thrown when the web page is incompletely loaded 
+	 * (usually due to lossy or slow connection) 
 	 */
-	public static class PageChangedException extends Exception {
+	public static class PageChangedException extends BaseException {
 		public PageChangedException(String TAG) {
-			Log.e(TAG,"SNUCRS web page is changed. This app needs to be updated immediately.");
+			super(TAG,"SNUCRS web page is changed. This app needs to be updated.");
 		}
 	}
 }

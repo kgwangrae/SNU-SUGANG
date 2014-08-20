@@ -3,7 +3,6 @@ package com.kgwangrae.snucrs.utils;
 import android.content.Context;
 
 public class PrefUtil {
-	//TODO : simplify this code.
 	private static String credentialCategory = "credential";
 	private static String jSessionIdKey = "jSessionId";
 	private static String timeStampKey = "timeStamp";
