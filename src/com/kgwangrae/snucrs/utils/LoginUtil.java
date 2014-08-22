@@ -59,9 +59,9 @@ public class LoginUtil {
 			super(TAG,"Authentication failed due to wrong credential.");
 		}
 	}
-	public static class IPChangedException extends BaseException {
-		public IPChangedException (String TAG) {
-			super(TAG,"Logged out due to IP address change. Please use stable connection such as Wi-Fi.");
+	public static class LoggedOutException extends BaseException {
+		public LoggedOutException (String TAG) {
+			super(TAG,"Logged out due to IP address change or login attempt from other browser.");
 		}
 	}
 	
@@ -155,7 +155,7 @@ public class LoginUtil {
 				BufferedReader br = new BufferedReader(new InputStreamReader(checkCon.getInputStream()));
 				for (String line=br.readLine(); line!=null; line=br.readLine()) {
 					if(line.contains("로그인전")) {
-						throw new IPChangedException(TAG);
+						throw new LoggedOutException(TAG);
 					}
 					else if(line.contains("로그인후")) break;
 				}
@@ -171,7 +171,7 @@ public class LoginUtil {
 				raisedException = e;
 				//Retrying is meaningless for this case.
 			}
-			catch (IPChangedException e) {
+			catch (LoggedOutException e) {
 				raisedException = e;
 				if (isRetrialRequired()) {
 					//No interval is required for this case.

@@ -1,8 +1,6 @@
 package com.kgwangrae.snucrs.utils;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -29,7 +27,7 @@ import android.widget.TextView;
 
 import com.kgwangrae.snucrs.R;
 import com.kgwangrae.snucrs.utils.CommUtil.PageChangedException;
-import com.kgwangrae.snucrs.utils.LoginUtil.IPChangedException;
+import com.kgwangrae.snucrs.utils.LoginUtil.LoggedOutException;
 
 /**
  * @author Gwangrae Kim
@@ -137,8 +135,8 @@ public class CourseUtil {
 					coursesTable = coursesDoc.select("tbody").get(0);
 				}
 				catch (IndexOutOfBoundsException e) {
-					throw new IPChangedException(TAG);
-					// Note : LoadInterest cannot handle IPChangedException by itself
+					throw new LoggedOutException(TAG);
+					// Note : LoadInterest cannot handle LoggedOutException by itself
 					// because the LoginTask(AsyncTask) cannot be executed inside this AsyncTask. 
 				}
 				Iterator<Element> coursesIter = coursesTable.children().iterator();
@@ -245,7 +243,7 @@ public class CourseUtil {
 					return retryDelayed(TAG);
 				raisedException = e;
 			}
-			catch (IPChangedException e) {
+			catch (LoggedOutException e) {
 				if (isRetrialRequired())
 					return retry();
 				raisedException = e;
@@ -269,10 +267,14 @@ public class CourseUtil {
 			try {
 				numberCon = CommUtil.getSugangConnection(mContext, CommUtil.getURL(CommUtil.CAPTCHA)
 																						, CommUtil.getURL(CommUtil.INTEREST));
+				if (numberCon.getHeaderField("Location") == null) {
+					//Normal case. Do nothing
+				}
+				else if (numberCon.getHeaderField("Location").contains(CommUtil.getURL(CommUtil.LOGOUT))) {
+					throw new LoggedOutException(TAG);
+				}
 				Bitmap result = BitmapFactory.decodeStream(numberCon.getInputStream());
-				if (result == null)
-					throw new BaseException(TAG, "Unknown error!");
-				else return result;
+				return result;
 			}
 			catch (IOException e) {
 				if (isRetrialRequired())
