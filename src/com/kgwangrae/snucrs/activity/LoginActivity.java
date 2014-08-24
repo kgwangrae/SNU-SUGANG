@@ -70,14 +70,15 @@ public class LoginActivity extends ActionBarActivity {
 				//IMPORTANT : Avoid doing anything after this activity instance is destroyed
 				if (isFinishing()) return;
 				
-				Toast.makeText(mContext, "성공"
-					+Long.valueOf(PrefUtil.getTimeStamp(LoginActivity.this)).toString(), Toast.LENGTH_SHORT).show();
 				//Save the login information if the user wants it, otherwise delete it.
 				CheckBox rememberCheckBox = (CheckBox) findViewById(R.id.checkbox_remember_credential);
 				if (rememberCheckBox.isChecked()) PrefUtil.saveLoginInfo(mContext, mStudentId, mPassword);
 				else PrefUtil.deleteLoginInfo(mContext);
 				
-				startActivity(new Intent(mContext,SubmitActivity.class));
+				Intent submitActivityCall = new Intent(mContext,SubmitActivity.class);
+				submitActivityCall.putExtra(PrefUtil.studentIdKey, mStudentId);
+				submitActivityCall.putExtra(PrefUtil.passwordKey, mPassword);
+				startActivity(submitActivityCall);
 				if (pd.isShowing()) pd.dismiss();
 			}
 			@Override
@@ -85,7 +86,8 @@ public class LoginActivity extends ActionBarActivity {
 				if (isFinishing()) return;
 				
 				if (pd.isShowing()) pd.dismiss();
-				Toast.makeText(LoginActivity.this, "실패", Toast.LENGTH_SHORT).show();
+				Toast.makeText(LoginActivity.this, "로그인에 실패하였습니다.", Toast.LENGTH_SHORT).show();
+				//TODO : handle exception flag.
 			}
 		};
 		loginTask.execute();

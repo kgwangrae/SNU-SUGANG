@@ -76,14 +76,19 @@ public abstract class BaseAsyncTask <Result> extends AsyncTask<Void, Void, Resul
 	
 	/**
 	 * @return When the job succeeds then it must return the result object
-	 * , otherwise it must return null. (NOT false!)
-	 * NOTE : Especially warn this when you're returning Boolean.
+	 * , otherwise it must return null or false.
 	 */
 	protected abstract Result backgroundTask();
 	
 	@Override 
 	protected final void onPostExecute (Result result) {
-		if (result != null) onSuccess(result);
+		if (result != null) {
+			if (result instanceof Boolean) {
+				if ((Boolean) result) onSuccess(result);
+				else onFailure(raisedException);
+			}
+			else onSuccess(result);
+		}
 		else onFailure(raisedException);
 	}
 	

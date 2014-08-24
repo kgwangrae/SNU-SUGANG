@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-	<string name="rank">순위</string>    
+	<string name="rank">순위</string>
+	<string name="current_course">신청 과목 : </string>  
+	<string name="dont_care_time">꼭 4분 전부터 클릭을 시작하세요!</string>    
 </resources>

@@ -63,6 +63,9 @@ public class LoginUtil {
 		public LoggedOutException (String TAG) {
 			super(TAG,"Logged out due to IP address change or login attempt from other browser.");
 		}
+		public LoggedOutException (String TAG, String reason) {
+			super(TAG,reason);
+		}
 	}
 	
 	public static abstract class LoginTask extends BaseAsyncTask <Boolean> {
@@ -97,6 +100,7 @@ public class LoginUtil {
 					= CommUtil.getSugangConnection(mContext, loginPageURL, CommUtil.getURL(CommUtil.MAIN));
 				//Write Login Data, Note current time.
 				timeStamp = System.currentTimeMillis();
+				loginCon.setRequestProperty("Content-Type","application/x-www-form-urlencoded");
 				writer = new OutputStreamWriter(loginCon.getOutputStream());
 				String data = "j_username="+URLEncoder.encode(studentId,"utf-8")
 						+"&j_password="+URLEncoder.encode(base64Password,"utf-8")

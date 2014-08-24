@@ -1,6 +1,9 @@
 package com.kgwangrae.snucrs.utils;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -42,7 +45,7 @@ public class CourseUtil {
 		public static final Integer OPEN_FROM = 1;
 		public static final Integer YEAR = 2;
 		public static final Integer CODE = 3; //sbjtCd
-		public static final Integer SECTION = 4; //ltNo (Warning : not itNo, ltNo (ListNumber))
+		public static final Integer NUMBER = 4; //ltNo (Warning : not itNo! ltNo (ListNumber))
 		public static final Integer NAME = 5;
 		public static final Integer CREDIT = 6;
 		public static final Integer TIME = 7;
@@ -72,7 +75,7 @@ public class CourseUtil {
 		@Override
 		public String toString() {
 			//May be inefficient, but quite clear.
-			String result = getData(NAME)+" "+getData(SECTION);
+			String result = getData(NAME)+" "+getData(NUMBER);
 			if (getData(INSTRUCTOR) != null) {
 				result +=  "\n"+getData(INSTRUCTOR);
 			}
@@ -112,7 +115,7 @@ public class CourseUtil {
 	 *  <td rowspan="1">30 (21)</td>
 	 *  <td rowspan="1">21</td>
 	 *  <td rowspan="1" class="line_no">포스코수영장</td>
-	 *  TYPE, OPEN_FROM, YEAR, CODE, SECTION, NAME, CREDIT, 
+	 *  TYPE, OPEN_FROM, YEAR, CODE, NUMBER, NAME, CREDIT, 
 	 *  TIME, FORM, VENUE, INSTRUCTOR, MAX_CAPACITY, CURR_CAPACITY, EXTRAS (in order)
 	 *  is specified in the class {@link Course}
 	 */
@@ -167,7 +170,7 @@ public class CourseUtil {
 									foundAttrsCount++;
 								}
 								else if (attrName.equalsIgnoreCase("ltNo")) {
-									currCourse.putData(Course.SECTION, value);
+									currCourse.putData(Course.NUMBER, value);
 									foundAttrsCount++;
 								}
 							}
@@ -297,7 +300,7 @@ public class CourseUtil {
 	 * @author Gwangrae Kim
 	 */
 	@SuppressWarnings("serial")
-	public static class CourseSubmitTask extends BaseAsyncTask <Boolean> {
+	public static abstract class CourseUpdateTask extends BaseAsyncTask <Boolean> {
 		//Exceptions that may only occur during submission
 		public static class WrongCaptchaException extends BaseException {
 			public WrongCaptchaException (String TAG, String reason) {
@@ -335,21 +338,164 @@ public class CourseUtil {
 			}
 		}
 		
-		public CourseSubmitTask (Context context) {
+		private static final String TAG = "CourseUpdateTask";
+		public static final int WORK_INPUT = 0;
+		public static final int WORK_DELETE = 1;
+		
+		private boolean isPreSubmit = false;
+		protected Course mCourse = null;
+		private String mCaptcha = null;
+		private String workType = null;
+		
+		public CourseUpdateTask (Context context, boolean isPreSubmit, Course course, 
+										String captcha, int workType) {
 			super(context);
+			this.isPreSubmit = isPreSubmit; 
+			this.mCourse = course;
+			this.mCaptcha = captcha;
+			switch (workType) {
+			case WORK_INPUT :
+				this.workType = "I";
+				break;
+			case WORK_DELETE:
+				this.workType = "D";
+				break;
+			default:
+				//Let this.workType be null.
+				break;
+			}
 		}
+		
+		
 		@Override 
 		protected Boolean backgroundTask() {
-			return null;
-		}
-		
-		@Override
-		protected void onSuccess(Boolean result) {
-			
-		}
-		
-		@Override
-		protected void onFailure(Exception exceptionInstance) {
+			HttpURLConnection submissionCon = null;
+			try {
+				if (isPreSubmit)
+					submissionCon = CommUtil.getSugangConnection(mContext
+							, CommUtil.getURL(CommUtil.PRE_SUBMISSION), CommUtil.getURL(CommUtil.INTEREST));
+				else 
+					submissionCon = CommUtil.getSugangConnection(mContext
+							, CommUtil.getURL(CommUtil.SUBMISSION), CommUtil.getURL(CommUtil.INTEREST));
+				submissionCon.setRequestProperty("Content-Type","application/x-www-form-urlencoded");
+				submissionCon.setDoOutput(true);
+				
+				OutputStreamWriter applyFormData = new OutputStreamWriter(submissionCon.getOutputStream());
+				StringBuffer strBuf = new StringBuffer();
+				strBuf.append("workType=").append(workType)
+						.append("&check=0")
+						.append("&sbjtCd=").append(mCourse.getData(Course.CODE))
+						.append("&ltNo=").append(mCourse.getData(Course.NUMBER))
+						.append("&inputText=").append(mCaptcha);
+				applyFormData.write(strBuf.toString());
+				applyFormData.close();
+				
+				boolean isResultFound = false;
+				Pattern alertPattern = Pattern.compile("alert[(]\"(.*)\"[)];");
+				
+				BufferedReader br = new BufferedReader (new InputStreamReader (submissionCon.getInputStream()));
+				for(String input = br.readLine();input!=null;input=br.readLine()) {
+					Matcher alertMatcher = alertPattern.matcher(input);
+					if(alertMatcher.find()) {
+						isResultFound = true;
+						String result = alertMatcher.group(1);
+						result = result.replace("\\n", " ");
+						Log.i("The result found!",result);
+						/**
+						 * Idea of this part is provided by Alchan Kim, SNUCSE.
+						 * TODO : needs verification. (재수강 / 이미 들은 과목 / 가득 찬 강좌 신청) 
+						*/
+						if(result.contains("확인문자")) {
+							throw new WrongCaptchaException(TAG, result);
+						}
+						else if(result.contains("못했습니다")||result.contains("아닙니다")||result.contains("잘못")
+								||result.contains("오류")||result.contains("없습니다")||result.contains("실패")
+								||result.contains("겹칩니다")||result.contains("수업교시")) {
+							//TODO : 강의 시간 겹침
+							if (result.contains("시간")||result.contains("기간")) 
+								throw new NotPeriodException(TAG, result);
+							else if (result.contains("대상자")) 
+								throw new NotEligibleException(TAG, result);
+							else if(result.contains("이미")&&(!result.contains("가득"))) 
+								throw new AlreadySubmittedException(TAG, result);
+							else throw new OtherHandleableException(TAG, result);
+						}
+						else if(result.contains("이미")&&(!result.contains("가득"))) {
+							throw new AlreadySubmittedException(TAG, result);
+						}
+						else if(result.contains("넘었습니다")&&(!result.contains("가득"))) {
+							//Weirdly they says "5번 넘게 틀렸습니다. 로그아웃 됩니다."
+							//But It's still okay to use the current JSESSIONID!
+							throw new WrongCaptchaException(TAG, result);
+							//throw new LoggedOutException(TAG, result);
+						}
+						else if(result.contains("로그아웃")||result.contains("중복 로그인")) {
+							throw new LoggedOutException(TAG, result);
+						}
+						//Succeeded after filtering the states above.
+					}
+				}
+				//If any result is not fond after loop
+				if (!isResultFound) {
+				// Check whether the session was killed by login from other browser
+					if (submissionCon.getHeaderField("Location") == null)
+						throw new PageChangedException(TAG);
+					else if (submissionCon.getHeaderField("Location").contains(CommUtil.getURL(CommUtil.LOGOUT))) {
+						throw new LoggedOutException(TAG,"다른 브라우저에서 중복 로그인하여 로그아웃되었습니다.");
+					}
+					else throw new PageChangedException(TAG);
+				}
+				return true;
+				// TODO : weirdly set-cookie appears again sometimes
+			}
+			catch (AlreadySubmittedException e) {
+				raisedException = e;
+				return false;
+			}
+			catch (NotEligibleException e) {
+				raisedException = e;
+				return false;
+			}
+			catch (NotPeriodException e) {
+				raisedException = e;
+				return false;
+			}
+			catch (WrongCaptchaException e) {
+				raisedException = e;
+				return false;
+			}
+			catch (OtherHandleableException e) {
+				raisedException = e;
+				return false;
+			}
+			catch (LoggedOutException e) {
+				if (e.getReason().contains("중복")) {
+					// Fail instantly
+				}
+				else if (isRetrialRequired())
+					return retry();
+				raisedException = e;
+				return false;
+			}
+			catch (PageChangedException e) {
+				raisedException = e;
+				Log.e(TAG, "Page structure is changed! This app needs an update!", e);
+				return false;
+			}
+			catch (IOException e)	{
+				if (isRetrialRequired()) 
+					return retryDelayed(TAG);
+				Log.e(TAG, "An IO error occurred.", e);
+				return false;
+			}
+			catch (Exception e) {
+				raisedException = e;
+				Log.e(TAG, "Unknown Exception occurred.", e);
+				return false;
+			}
+			finally {
+				if(submissionCon != null) submissionCon.disconnect();
+			}
 		}
 	}
 	

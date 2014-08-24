@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) 2014 Gwangrae Kim. See the file LICENSE for copying permission. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center_horizontal"
+    android:orientation="vertical" >
+
+    <TextView
+        android:id="@+id/current_course_textView"
+        android:layout_margin="5dp"
+        android:text="@string/current_course"
+        android:textStyle="bold"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+    
+    <TextView
+        android:id="@+id/too_early_warning_textView"
+        android:layout_margin="5dp"
+        android:text="@string/dont_care_time"
+        android:textColor="#ff0000"
+        android:textStyle="bold"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <ImageView
+        android:id="@+id/captcha_image_view"
+        android:layout_margin="5dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/ic_launcher" />
+
+    <EditText
+        android:id="@+id/captcha_input"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="5dp"
+        android:inputType="numberDecimal"
+        android:singleLine="true" >
+
+        <requestFocus />
+    </EditText>
+
+</LinearLayout>

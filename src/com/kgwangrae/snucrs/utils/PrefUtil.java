@@ -6,8 +6,8 @@ public class PrefUtil {
 	private static String credentialCategory = "credential";
 	private static String jSessionIdKey = "jSessionId";
 	private static String timeStampKey = "timeStamp";
-	private static String studentIdKey = "sid";
-	private static String passwordKey = "pw";
+	public static String studentIdKey = "sid";
+	public static String passwordKey = "pw";
 	
 	public static String getJSessionId(Context c) {
 		return c.getSharedPreferences(credentialCategory, Context.MODE_PRIVATE)
