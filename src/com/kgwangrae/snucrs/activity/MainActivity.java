@@ -32,3 +32,9 @@ public class MainActivity extends ActionBarActivity {
 	}
 
 }
+/**
+ * TODO :
+ * - 오래 다른 작업을 하다가 SubmitActivity로 돌아온 경우 세션이 종료됨
+ * - 관심강좌가 없을 경우 CourseUtil.java:236에서 에러남
+ * - Cancel했을 때 에러남
+ */

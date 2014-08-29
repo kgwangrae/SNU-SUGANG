@@ -41,6 +41,7 @@ public class SubmitActivity extends ActionBarActivity {
 	
 	private boolean isBusy = true;
 	//private RefreshHandler mHandler = null;
+	//TODO : maintain login every 5 minutes using the handler above
 	
 	@Override 
 	protected void onSaveInstanceState(Bundle outState) {
