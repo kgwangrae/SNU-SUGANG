@@ -1,20 +1,5 @@
 package com.kgwangrae.snucrs.utils;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.net.HttpURLConnection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -32,12 +17,54 @@ import com.kgwangrae.snucrs.R;
 import com.kgwangrae.snucrs.utils.CommUtil.PageChangedException;
 import com.kgwangrae.snucrs.utils.LoginUtil.LoggedOutException;
 
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.net.HttpURLConnection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 /**
  * @author Gwangrae Kim
  */
 public class CourseUtil {
 	/**
 	 * Class for representing a course
+   * TODO : too inflexible...
+   * 2015-04-30 : SNU added one attribute, then this app crashed...
+   * <tr>
+   <td rowspan="3"><input type="checkbox" title="선택" name="check" value="0">
+   <input type="hidden" name="openSchyy" value="2015">
+   <input type="hidden" name="openShtmFg" value="U000200001">
+   <input type="hidden" name="openDetaShtmFg" value="U000300002">
+   <input type="hidden" name="sbjtCd" value="041.003">
+   <input type="hidden" name="ltNo" value="001">
+   </td>
+   <td rowspan="3">교양</td>
+   <td rowspan="3" class="ta_left">인문대학</td>
+   <td rowspan="3" class="ta_left">국어국문학과</td> ---> TODO this one is added !
+   <td rowspan="3">1학년</td>
+   <td rowspan="3">041.003</td>
+   <td rowspan="3">001</td>
+   <td rowspan="3" class="ta_left"><a href="javascript:fnDetailSubject(0)" class="deco_under">문학과 대중문화</a></td>
+   <td rowspan="3">3-3-0</td>
+   <td class="blue_st">월(15:00~17:50)</td>
+   <td class="blue_st">이론</td>
+   <td class="blue_st">001-207</td>
+   <td rowspan="3">최정아</td>
+   <td rowspan="3">40 (40)</td>
+   <td rowspan="3">0</td>
+   <td rowspan="3" class="line_no">*&nbsp;(권장과목)</td>
+   </tr>
+   TODO just let human-readable information displayed in arbitrary order.
 	 */
 	public static class Course {
 		//Human-readable attributes for each course
@@ -74,18 +101,12 @@ public class CourseUtil {
 		}
 		@Override
 		public String toString() {
-			//May be inefficient, but quite clear.
-			String result = getData(NAME)+" "+getData(NUMBER);
-			if (getData(INSTRUCTOR) != null) {
-				result +=  "\n"+getData(INSTRUCTOR);
-			}
-			if (getData(TIME) != null) {
-				result += "\n"+getData(TIME);
-			}
-			if (getData(EXTRAS) != null) {
-				result += "\n"+getData(EXTRAS);
-			}
-			return result;
+			StringBuffer sb = new StringBuffer();
+      Iterator<String> courseIterator = mCourseData.values().iterator();
+      while (courseIterator.hasNext()) {
+        sb.append(courseIterator.next() + " / ");
+      }
+			return sb.toString();
 		}
 	}
 	
@@ -127,11 +148,12 @@ public class CourseUtil {
 			super(context);
 			mCourses = new LinkedList<Course> ();
 		}
-		
+
+    // TODO avoid this kind of too long method body and regex.
 		@Override 
 		protected LinkedList<Course> backgroundTask() {
 			try {				
-				Document coursesDoc = CommUtil.getJsoupDoc(mContext,CommUtil.getURL(CommUtil.INTEREST), 
+				Document coursesDoc = CommUtil.getJsoupDoc(CommUtil.getURL(CommUtil.INTEREST),
 																				CommUtil.getURL(CommUtil.MAIN));
 				Element coursesTable = null;
 				try {
@@ -155,7 +177,7 @@ public class CourseUtil {
 						// case 0 : A new course appeared!
 						currCourse = new Course();
 						int foundAttrsCount = 0;
-						//Look for codes which are necessary for submitting a course.
+						//Look for codes which are NECESSARY for submitting a course.
 						Iterator <Element> submissionCodesIter = currCourseIter.next().children().iterator();
 						while(submissionCodesIter.hasNext()) {
 							String rawData = submissionCodesIter.next().toString();
@@ -177,28 +199,18 @@ public class CourseUtil {
 							else throw new PageChangedException(TAG);	
 						}
 						if (foundAttrsCount != 2) throw new PageChangedException(TAG);
-						
+            // Strict validation is required only for the codes above.
+
+            // Other human-readable information which is not necessary for submission.
 						for (int idx = 0; currCourseIter.hasNext(); idx++) {
 							String rawData = currCourseIter.next().toString();
 							Pattern infoPattern = Pattern.compile("<td .*\">([^<]*).*</td>");
 							Matcher infoMatcher = infoPattern.matcher(rawData.toString());
 							if (infoMatcher.find()) {
-								if (foundAttrsCount > 14) throw new PageChangedException(TAG);
 								String data = infoMatcher.group(1);
-								/**
-								 * The values sbjtCd and ltNo respectively appear two times for each course
-								 * so the code below checks parity of those values.
-								 */
 								String existingData = currCourse.getData(idx);
 								if (existingData != null) {
-									if (existingData.equalsIgnoreCase(data)) {
-										//Two values are the same. Do Nothing.
-									}
-									else {
-										Log.e(TAG, "Given course submission value is unexpected. "
-																			+existingData+" and "+data+"!");
-										throw new PageChangedException(TAG);
-									}
+                  // Do nothing for existing data.
 								}
 								else {
 									currCourse.putData(idx, data);
@@ -207,8 +219,7 @@ public class CourseUtil {
 							}
 							else throw new PageChangedException(TAG);
 						}
-						
-						if (foundAttrsCount != 14) throw new PageChangedException(TAG);
+
 						mCourses.add(currCourse);
 					}
 					else { 
@@ -230,10 +241,9 @@ public class CourseUtil {
 								if (existingData == null) {
 									currCourse.putData(idx, data);
 								}
-								else if (existingData.contains(data)) {
-									//Same data. Do nothing
+								else {
+                  //Do nothing
 								}
-								else currCourse.putData(idx, existingData+" & "+data);
 							}
 							else throw new PageChangedException(TAG);
 						}
@@ -268,7 +278,7 @@ public class CourseUtil {
 		protected Bitmap backgroundTask() {
 			HttpURLConnection numberCon = null;
 			try {
-				numberCon = CommUtil.getSugangConnection(mContext, CommUtil.getURL(CommUtil.CAPTCHA)
+				numberCon = CommUtil.getSugangConnection(CommUtil.getURL(CommUtil.CAPTCHA)
 																						, CommUtil.getURL(CommUtil.INTEREST));
 				if (numberCon.getHeaderField("Location") == null) {
 					//Normal case. Do nothing
@@ -341,7 +351,7 @@ public class CourseUtil {
 		private static final String TAG = "CourseUpdateTask";
 		public static final int WORK_INPUT = 0;
 		public static final int WORK_DELETE = 1;
-		
+
 		private boolean isPreSubmit = false;
 		protected Course mCourse = null;
 		private String mCaptcha = null;
@@ -372,11 +382,11 @@ public class CourseUtil {
 			HttpURLConnection submissionCon = null;
 			try {
 				if (isPreSubmit)
-					submissionCon = CommUtil.getSugangConnection(mContext
-							, CommUtil.getURL(CommUtil.PRE_SUBMISSION), CommUtil.getURL(CommUtil.INTEREST));
+					submissionCon = CommUtil.getSugangConnection(CommUtil.getURL(CommUtil.PRE_SUBMISSION),
+            CommUtil.getURL(CommUtil.INTEREST));
 				else 
-					submissionCon = CommUtil.getSugangConnection(mContext
-							, CommUtil.getURL(CommUtil.SUBMISSION), CommUtil.getURL(CommUtil.INTEREST));
+					submissionCon = CommUtil.getSugangConnection(CommUtil.getURL(CommUtil.SUBMISSION),
+            CommUtil.getURL(CommUtil.INTEREST));
 				submissionCon.setRequestProperty("Content-Type","application/x-www-form-urlencoded");
 				submissionCon.setDoOutput(true);
 				
@@ -429,24 +439,29 @@ public class CourseUtil {
 							throw new WrongCaptchaException(TAG, result);
 							//throw new LoggedOutException(TAG, result);
 						}
-						else if(result.contains("로그아웃")||result.contains("중복 로그인")) {
+						else if(result.contains("로그 아웃")||result.contains("로그아웃")
+              ||result.contains("로그인")||result.contains("중복 로그인")
+              ||result.contains("10분")) {
 							throw new LoggedOutException(TAG, result);
 						}
 						//Succeeded after filtering the states above.
 					}
 				}
-				//If any result is not fond after loop
+				//If any result is not found after loop : consider this as logout event (TODO : examine more)
 				if (!isResultFound) {
+        //  Log.i("INFO",submissionCon.getHeaderFields().toString());
 				// Check whether the session was killed by login from other browser
-					if (submissionCon.getHeaderField("Location") == null)
-						throw new PageChangedException(TAG);
-					else if (submissionCon.getHeaderField("Location").contains(CommUtil.getURL(CommUtil.LOGOUT))) {
-						throw new LoggedOutException(TAG,"다른 브라우저에서 중복 로그인하여 로그아웃되었습니다.");
-					}
-					else throw new PageChangedException(TAG);
+				//	if (submissionCon.getHeaderField("Location") == null) {
+        //    throw new PageChangedException(TAG);
+        //  }
+				//	else if (submissionCon.getHeaderField("Location").contains(CommUtil.getURL(CommUtil.LOGOUT))) {
+						throw new LoggedOutException(TAG,"수강신청 서버에 의해 로그아웃되었습니다.*");
+				//	}
+        //  else throw new PageChangedException(TAG);
 				}
 				return true;
 				// TODO : weirdly set-cookie appears again sometimes
+        // Instead of location header -> maybe sugang.snu.ac.kr updated.
 			}
 			catch (AlreadySubmittedException e) {
 				raisedException = e;
@@ -477,11 +492,11 @@ public class CourseUtil {
 				raisedException = e;
 				return false;
 			}
-			catch (PageChangedException e) {
+		/*	catch (PageChangedException e) {
 				raisedException = e;
 				Log.e(TAG, "Page structure is changed! This app needs an update!", e);
 				return false;
-			}
+			}*/
 			catch (IOException e)	{
 				if (isRetrialRequired()) 
 					return retryDelayed(TAG);

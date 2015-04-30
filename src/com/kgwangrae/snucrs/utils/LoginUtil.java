@@ -32,8 +32,8 @@ public class LoginUtil {
 	 * @param c Please make sure this mContext is not null.
 	 * @return
 	 */
-	public static boolean isCredentialOld (Context c) {
-		return (System.currentTimeMillis() - PrefUtil.getTimeStamp(c) > credentialLifeDuration);
+	public static boolean isCredentialOld () {
+		return (System.currentTimeMillis() - PrefUtil.getTimeStamp() > credentialLifeDuration);
 	}
 	public static class RefreshHandler extends Handler {
 		//TODO
@@ -97,7 +97,7 @@ public class LoginUtil {
 			try {		
 				String loginPageURL = "http://sugang.snu.ac.kr/sugang/j_login";
 				loginCon 
-					= CommUtil.getSugangConnection(mContext, loginPageURL, CommUtil.getURL(CommUtil.MAIN));
+					= CommUtil.getSugangConnection(loginPageURL, CommUtil.getURL(CommUtil.MAIN));
 				//Write Login Data, Note current time.
 				timeStamp = System.currentTimeMillis();
 				loginCon.setRequestProperty("Content-Type","application/x-www-form-urlencoded");
@@ -148,14 +148,14 @@ public class LoginUtil {
 					throw new PageChangedException(TAG);
 				}
 				//finally succeeded. Save the credential for further use.
-				PrefUtil.setJSessionId(mContext, jSessionId, timeStamp);
+				PrefUtil.setJSessionId(jSessionId, timeStamp);
 				
 				/**
 				 * Verify again with the given JSESSIONID by checking the main page 
 				 * now has some certain Strings that indicates the login was successful.
 				 */
 				checkCon 
-					= CommUtil.getSugangConnection(mContext, CommUtil.getURL(CommUtil.MAIN), loginPageURL);
+					= CommUtil.getSugangConnection(CommUtil.getURL(CommUtil.MAIN), loginPageURL);
 				BufferedReader br = new BufferedReader(new InputStreamReader(checkCon.getInputStream()));
 				for (String line=br.readLine(); line!=null; line=br.readLine()) {
 					if(line.contains("로그인전")) {

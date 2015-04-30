@@ -2,5 +2,5 @@
 <resources>
 	<string name="rank">순위</string>
 	<string name="current_course">신청 과목 : </string>  
-	<string name="dont_care_time">꼭 4분 전부터 클릭을 시작하세요!</string>    
+	<string name="dont_care_time">3-4분 전부터 클릭을 시작하세요. 이 창을 켜놓고 10분 이상 기다리지 마세요. (로그아웃이 됩니다!)</string>
 </resources>

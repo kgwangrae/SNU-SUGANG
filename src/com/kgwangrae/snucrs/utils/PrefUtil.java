@@ -1,48 +1,63 @@
 package com.kgwangrae.snucrs.utils;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 
 public class PrefUtil {
-	private static String credentialCategory = "credential";
-	private static String jSessionIdKey = "jSessionId";
-	private static String timeStampKey = "timeStamp";
-	public static String studentIdKey = "sid";
-	public static String passwordKey = "pw";
+  public static String KEY_STUDENT_ID = "sid";
+  public static String KEY_PASSWORD = "pw";
+  
+	private static String PREF_KEY_JSESSIONID = "jSessionId";
+	private static String PREF_KEY_TIMESTAMP = "timeStamp";
+  private static String PREF_KEY_PRESUB = "isPresubmissionMode";
+  
+  private static SharedPreferences sugangPref = SugangApp.getAppContext()
+    .getSharedPreferences("sugangpref", Context.MODE_PRIVATE);
 	
-	public static String getJSessionId(Context c) {
-		return c.getSharedPreferences(credentialCategory, Context.MODE_PRIVATE)
-					.getString(jSessionIdKey, null);
+	public static String getJSessionId() {
+		return sugangPref.getString(PREF_KEY_JSESSIONID, null);
 	}
-	public static long getTimeStamp(Context c) {
-		return c.getSharedPreferences(credentialCategory, Context.MODE_PRIVATE)
-					.getLong(timeStampKey,0);
+	public static long getTimeStamp() {
+		return sugangPref.getLong(PREF_KEY_TIMESTAMP, 0);
 	}
-	public static boolean setJSessionId(Context c, String jSessionId, long timeStamp) {
-		return c.getSharedPreferences(credentialCategory, Context.MODE_PRIVATE).edit()
-				.putString(jSessionIdKey, jSessionId)
-				.putLong(timeStampKey,timeStamp)
+	public static boolean setJSessionId(String jSessionId, long timeStamp) {
+		return sugangPref.edit()
+        .putString(PREF_KEY_JSESSIONID, jSessionId)
+				.putLong(PREF_KEY_TIMESTAMP,timeStamp)
 				.commit();
 	}
-	public static boolean renewTimestamp(Context c) {
-		return c.getSharedPreferences(credentialCategory, Context.MODE_PRIVATE).edit()
-				.putLong(timeStampKey,System.currentTimeMillis()).commit();
+	public static boolean renewTimestamp() {
+		return sugangPref.edit()
+      .putLong(PREF_KEY_TIMESTAMP, System.currentTimeMillis())
+      .commit();
 	}
 	
-	public static String getStudentId (Context c) {
-		return c.getSharedPreferences(credentialCategory, Context.MODE_PRIVATE)
-				.getString(studentIdKey,null);
+	public static String getStudentId() {
+		return sugangPref.getString(KEY_STUDENT_ID, null);
 	}
-	public static String getPassword (Context c) {
-		return c.getSharedPreferences(credentialCategory, Context.MODE_PRIVATE)
-				.getString(passwordKey,null);
+	public static String getPassword() {
+		return sugangPref.getString(KEY_PASSWORD, null);
 	}
-	public static boolean saveLoginInfo (Context c, String studentId, String password) {
-		return c.getSharedPreferences(credentialCategory, Context.MODE_PRIVATE).edit()
-				.putString(studentIdKey, studentId)
-				.putString(passwordKey, password)
+	public static boolean saveLoginInfo(String studentId, String password) {
+		return sugangPref.edit()
+				.putString(KEY_STUDENT_ID, studentId)
+				.putString(KEY_PASSWORD, password)
 				.commit();
 	}
-	public static boolean deleteLoginInfo (Context c) {
-		return saveLoginInfo(c, null, null);
+	public static boolean deleteLoginInfo() {
+		return saveLoginInfo(null, null);
 	}
+
+  /**
+   * TODO avoid using context as a parameter in above methods.
+   */
+  public static boolean setPresubmission(boolean isPresubmission) {
+    return sugangPref.edit()
+      .putBoolean(PREF_KEY_PRESUB, isPresubmission)
+      .commit();
+  }
+
+  public static boolean isPresubmissionMode(){
+    return sugangPref.getBoolean(PREF_KEY_PRESUB, false);
+  }
 }

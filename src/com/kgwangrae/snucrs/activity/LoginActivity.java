@@ -30,8 +30,8 @@ public class LoginActivity extends ActionBarActivity {
 		final EditText passwordInput = (EditText) findViewById(R.id.input_password);
 		
 		//Try to fetch the login information  
-		mStudentId = PrefUtil.getStudentId(this);
-		mPassword = PrefUtil.getPassword(this);
+		mStudentId = PrefUtil.getStudentId();
+		mPassword = PrefUtil.getPassword();
 		
 		if(mStudentId!=null && mPassword!=null) {
 			//If the login information exists, automatically attempt login.
@@ -67,17 +67,17 @@ public class LoginActivity extends ActionBarActivity {
 		LoginTask loginTask = new LoginTask (LoginActivity.this,mStudentId, mPassword) {
 			@Override
 			protected void onSuccess(Boolean result) {
-				//IMPORTANT : Avoid doing anything after this activity instance is destroyed
+				//Avoid doing anything after this activity instance is destroyed
 				if (isFinishing()) return;
 				
 				//Save the login information if the user wants it, otherwise delete it.
 				CheckBox rememberCheckBox = (CheckBox) findViewById(R.id.checkbox_remember_credential);
-				if (rememberCheckBox.isChecked()) PrefUtil.saveLoginInfo(mContext, mStudentId, mPassword);
-				else PrefUtil.deleteLoginInfo(mContext);
+				if (rememberCheckBox.isChecked()) PrefUtil.saveLoginInfo(mStudentId, mPassword);
+				else PrefUtil.deleteLoginInfo();
 				
 				Intent submitActivityCall = new Intent(mContext,SubmitActivity.class);
-				submitActivityCall.putExtra(PrefUtil.studentIdKey, mStudentId);
-				submitActivityCall.putExtra(PrefUtil.passwordKey, mPassword);
+				submitActivityCall.putExtra(PrefUtil.KEY_STUDENT_ID, mStudentId);
+				submitActivityCall.putExtra(PrefUtil.KEY_PASSWORD, mPassword);
 				startActivity(submitActivityCall);
 				if (pd.isShowing()) pd.dismiss();
 			}

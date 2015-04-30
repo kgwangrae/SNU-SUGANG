@@ -1,17 +1,16 @@
 package com.kgwangrae.snucrs.utils;
 
+import android.content.Context;
+
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-
-import android.content.Context;
-import android.util.Log;
 
 /**
  * Utils for communicating with SNUCRS server.
@@ -68,9 +67,9 @@ public class CommUtil {
 	 * @throws IOException
 	 * @throws MalformedURLException Thrown when url or referer is invalid
 	 */
-	public static HttpURLConnection getSugangConnection (Context c, String url, String referer) 
+	public static HttpURLConnection getSugangConnection (String url, String referer)
 																throws MalformedURLException, IOException {
-		String jSessionId = PrefUtil.getJSessionId(c);
+		String jSessionId = PrefUtil.getJSessionId();
 		HttpURLConnection con = (HttpURLConnection) new URL(url).openConnection();
 		con.setReadTimeout(3000); // 1. Limit waiting time
 		con.setUseCaches(false); // 2. Disable cache
@@ -84,7 +83,7 @@ public class CommUtil {
 		if (jSessionId != null) {
 			con.setRequestProperty("Cookie", jSessionId+"; enter=Y");
 			//For every request using JSESSIONID, the life of JSESSIONID is prolonged!
-			PrefUtil.renewTimestamp(c);
+			PrefUtil.renewTimestamp();
 		}
 		else con.setRequestProperty("Cookie", "enter=Y"); //7,8 : Set cookie properties
 		con.setRequestMethod("POST");
@@ -101,12 +100,11 @@ public class CommUtil {
 	 * @throws IOException
 	 * @throws MalformedURLException
 	 */
-	public static Document getJsoupDoc (Context c, String url, String referer) 
-													throws IOException, MalformedURLException {
+	public static Document getJsoupDoc (String url, String referer) throws IOException {
 		HttpURLConnection con = null;
 		BufferedReader br = null;
 		try {
-			con = getSugangConnection(c, url, referer);
+			con = getSugangConnection(url, referer);
 			br = new BufferedReader(new InputStreamReader(con.getInputStream()));
 			
 			StringBuffer strbuf = new StringBuffer();
@@ -122,7 +120,8 @@ public class CommUtil {
 	}
 	
 	/**
-	 * Thrown when sturcture of the SNUCRS web page is changed so that this application can no longer operate.
+	 * Thrown when sturcture of the SNUCRS web page is changed so that
+   * this application can no longer operate.
 	 * NOTE : It can be unexpectedly thrown when the web page is incompletely loaded 
 	 * (usually due to lossy or slow connection) 
 	 */

@@ -1,8 +1,5 @@
 package com.kgwangrae.snucrs.activity;
 
-import java.io.IOException;
-import java.util.LinkedList;
-
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
@@ -30,6 +27,9 @@ import com.kgwangrae.snucrs.utils.LoginUtil.LoggedOutException;
 import com.kgwangrae.snucrs.utils.LoginUtil.LoginTask;
 import com.kgwangrae.snucrs.utils.PrefUtil;
 
+import java.io.IOException;
+import java.util.LinkedList;
+
 public class SubmitActivity extends ActionBarActivity {
 	private final static String TAG = "SubmitActivity"; 
 		
@@ -46,8 +46,8 @@ public class SubmitActivity extends ActionBarActivity {
 	@Override 
 	protected void onSaveInstanceState(Bundle outState) {
 		//TODO : save courses List to Pref. 
-		outState.putString(PrefUtil.studentIdKey, mStudentId);
-		outState.putString(PrefUtil.passwordKey, mPassword);
+		outState.putString(PrefUtil.KEY_STUDENT_ID, mStudentId);
+		outState.putString(PrefUtil.KEY_PASSWORD, mPassword);
 	}
 	
  	@Override
@@ -55,13 +55,24 @@ public class SubmitActivity extends ActionBarActivity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_submit);
 		setTitle("관심강좌에서 신청하기");
+
+    //Notify user about current mode
+    boolean isPresubmissionMode = PrefUtil.isPresubmissionMode();
+    if (isPresubmissionMode) {
+      Toast.makeText(this,"예비 수강신청 모드입니다. 모드 변경은 우측 상단 아이콘을 이용하세요",
+        Toast.LENGTH_LONG).show();
+    }
+    else {
+      Toast.makeText(this,"실제 수강신청 모드입니다. 모드 변경은 우측 상단 아이콘을 이용하세요"
+        ,Toast.LENGTH_LONG).show();
+    }
 		
 		Intent callIntent = getIntent();
-		mStudentId = callIntent.getStringExtra(PrefUtil.studentIdKey);
-		mPassword = callIntent.getStringExtra(PrefUtil.passwordKey);
+		mStudentId = callIntent.getStringExtra(PrefUtil.KEY_STUDENT_ID);
+		mPassword = callIntent.getStringExtra(PrefUtil.KEY_PASSWORD);
 		if (mStudentId==null || mPassword == null) {
-			mStudentId = savedInstanceState.getString(PrefUtil.studentIdKey);
-			mPassword = savedInstanceState.getString(PrefUtil.passwordKey);
+			mStudentId = savedInstanceState.getString(PrefUtil.KEY_STUDENT_ID);
+			mPassword = savedInstanceState.getString(PrefUtil.KEY_PASSWORD);
 		}
 		if (mStudentId==null || mPassword == null) {
 			Toast.makeText(this, "필요한 정보가 없습니다.", Toast.LENGTH_SHORT).show();
@@ -95,7 +106,8 @@ public class SubmitActivity extends ActionBarActivity {
 				if (isFinishing()) return;
 				isBusy = false;
 				
-				Toast.makeText(mContext, "관심강좌 가져오기 실패!", Toast.LENGTH_SHORT).show();
+				Toast.makeText(mContext, "관심강좌 가져오기 실패! "+exceptionInstance.toString()
+          , Toast.LENGTH_SHORT).show();
 			}	
 		}.execute();
 	}
@@ -127,14 +139,38 @@ public class SubmitActivity extends ActionBarActivity {
 				return super.onOptionsItemSelected(item);
 			mCourses = adapter.getCourses();
 			loadCaptcha(0);
-			
 			return true;
 		}
-		return super.onOptionsItemSelected(item);
+    else if (id == R.id.action_change_mode) {
+      boolean isPresubmissionMode = PrefUtil.isPresubmissionMode();
+      if (isPresubmissionMode) {
+        Toast.makeText(this,"실제 수강신청 모드로 변경됩니다.",Toast.LENGTH_LONG).show();
+      }
+      else {
+        Toast.makeText(this,"예비 수강신청 모드로 변경됩니다.",Toast.LENGTH_LONG).show();
+      }
+      PrefUtil.setPresubmission(!isPresubmissionMode);
+      return true;
+    }
+		else return super.onOptionsItemSelected(item);
 	}
 	
 	public void loadCaptcha (final int courseIdx) {
+    if (courseIdx == 0 && !isBusy) {
+      //Notify user about current mode
+      boolean isPresubmissionMode = PrefUtil.isPresubmissionMode();
+      if (isPresubmissionMode) {
+        Toast.makeText(this,"예비 수강신청 모드입니다. 모드 변경은 우측 상단 아이콘을 이용하세요",
+          Toast.LENGTH_LONG).show();
+      }
+      else {
+        Toast.makeText(this,"실제 수강신청 모드입니다. 모드 변경은 우측 상단 아이콘을 이용하세요"
+          ,Toast.LENGTH_LONG).show();
+      }
+    }
+
 		isBusy = true;
+
 		new CaptchaLoadTask(this) {
 			@Override
 			protected void onSuccess(Bitmap result) {
@@ -149,18 +185,27 @@ public class SubmitActivity extends ActionBarActivity {
 						Bitmap.createScaledBitmap(result, 4*result.getWidth(), 4*result.getHeight(), true));
 				final TextView captchaInput = (TextView) inputCaptchaView.findViewById(R.id.captcha_input);
 				TextView currentCourseView = (TextView) inputCaptchaView.findViewById(R.id.current_course_textView);
-				currentCourseView.setText(currentCourseView.getText()+" "+mCourses.get(0).toString());
+				currentCourseView.setText(currentCourseView.getText()+" "+mCourses.get(courseIdx).toString());
 				
 				builder.setTitle("보안문자를 입력하세요");
 				builder.setView(inputCaptchaView);
 				builder.setPositiveButton("확인", new OnClickListener() {
 					@Override
 					public void onClick(DialogInterface dialog, int which) {
-						onCaptchaInput (captchaInput.getText().toString(), 0);
+						onCaptchaInput (captchaInput.getText().toString(), courseIdx);
 					}
 				});
-				builder.show();
+				builder.setOnCancelListener(new DialogInterface.OnCancelListener() {
+          @Override
+          public void onCancel(DialogInterface dialog) {
+            isBusy = false;
+          }
+        });
+        AlertDialog captchaDialog = builder.create();
+        captchaDialog.setCanceledOnTouchOutside(false);
+        captchaDialog.show();
 			}
+
 			@Override
 			protected void onFailure(Exception e) {
 				if (isFinishing()) return;
@@ -176,7 +221,7 @@ public class SubmitActivity extends ActionBarActivity {
 						@Override
 						protected void onFailure(Exception exceptionInstance) {
 							if (isFinishing()) return;
-							Toast.makeText(mContext,"재로그인에 실패하였습니다.", Toast.LENGTH_SHORT).show();
+							Toast.makeText(mContext,"재 로그인에 실패하였습니다.", Toast.LENGTH_SHORT).show();
 							//TODO : handle exception flag.
 							isBusy = false;
 						}
@@ -191,12 +236,13 @@ public class SubmitActivity extends ActionBarActivity {
 	}
 	
 	public void onCaptchaInput (String captcha, final int courseIdx) {
-		new CourseUpdateTask(this, false, mCourses.get(courseIdx), captcha, CourseUpdateTask.WORK_INPUT) {
+		new CourseUpdateTask(this, PrefUtil.isPresubmissionMode(), mCourses.get(courseIdx),
+      captcha, CourseUpdateTask.WORK_INPUT) {
 			String courseName = mCourse.getData(Course.NAME);
 			@Override
 			protected void onSuccess(Boolean result) {
 				if (isFinishing()) return;
-				
+
 				Toast.makeText(mContext, courseName+" 성공!", Toast.LENGTH_SHORT).show();
 				if (courseIdx < (mCourses.size()-1)) {
 					loadCaptcha(courseIdx+1);
@@ -211,7 +257,7 @@ public class SubmitActivity extends ActionBarActivity {
 			@Override
 			protected void onFailure(Exception e) {
 				if (isFinishing()) return;
-				
+
 				if (e instanceof LoggedOutException) {
 					BaseException baseException = (BaseException) e;
 					Toast.makeText(mContext, courseName + " 실패 : "+ baseException.getReason()
@@ -240,7 +286,14 @@ public class SubmitActivity extends ActionBarActivity {
 				}
 				else if (e instanceof AlreadySubmittedException || e instanceof OtherHandleableException) {
 					//Case 2 : needs to ahead.
-					loadCaptcha(courseIdx+1);
+          if (courseIdx < (mCourses.size()-1)) {
+            loadCaptcha(courseIdx+1);
+          }
+          else {
+            //TODO : show result.
+            Toast.makeText(mContext, "수고하셨습니다!", Toast.LENGTH_SHORT).show();
+            isBusy = false;
+          }
 				}
 				else if (e instanceof NotEligibleException) {
 					//Case 3 : needs to stop.
